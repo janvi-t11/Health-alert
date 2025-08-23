@@ -11,6 +11,7 @@ import {
 import { createReport } from '../services/api';
 import toast from 'react-hot-toast';
 import { useData } from '../context/DataContext';
+import { analyzeHealthReport } from '../services/openai';
 
 export default function ReportForm({ onSubmitted }) {
   const { addReport } = useData();
@@ -163,7 +164,22 @@ export default function ReportForm({ onSubmitted }) {
         description
       };
       
-      const newReport = await addReport(reportData);
+      // AI Analysis
+      toast.loading('Analyzing report with AI...', { id: 'ai-analysis' });
+      const aiAnalysis = await analyzeHealthReport(reportData);
+      toast.dismiss('ai-analysis');
+      
+      // Enhanced report with AI insights
+      const enhancedReport = {
+        ...reportData,
+        aiAnalysis,
+        severity: aiAnalysis.severity || severity,
+        riskCategory: aiAnalysis.riskCategory,
+        urgencyScore: aiAnalysis.urgencyScore,
+        communityRisk: aiAnalysis.communityRisk
+      };
+      
+      const newReport = await addReport(enhancedReport);
       
       setSuccess('Report submitted successfully!');
       setHealthIssue('');

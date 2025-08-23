@@ -1,26 +1,62 @@
 const mongoose = require('mongoose');
 
-const ReportSchema = new mongoose.Schema(
-	{
-		healthIssue: { type: String, required: true, index: true },
-		severity: { type: String, required: true, enum: ['mild', 'moderate', 'severe'] },
-		description: { type: String, default: '' },
-		photoUrl: { type: String },
-		country: { type: String, required: true, default: 'India' },
-		state: { type: String, required: true },
-		city: { type: String, required: true },
-		area: { type: String, required: true },
-		pincode: { type: String, required: true },
-		status: { type: String, default: 'active', enum: ['active', 'critical', 'resolved', 'approved', 'rejected'] },
-		verified: { type: Boolean, default: false }
-	},
-	{ timestamps: true }
-);
+const reportSchema = new mongoose.Schema({
+  diseaseType: {
+    type: String,
+    required: true
+  },
+  healthIssue: {
+    type: String,
+    required: true
+  },
+  severity: {
+    type: String,
+    enum: ['mild', 'moderate', 'severe', 'critical'],
+    required: true
+  },
+  country: {
+    type: String,
+    required: true,
+    default: 'India'
+  },
+  state: {
+    type: String,
+    required: true
+  },
+  city: {
+    type: String,
+    required: true
+  },
+  area: {
+    type: String,
+    required: true
+  },
+  pincode: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String
+  },
+  status: {
+    type: String,
+    enum: ['active', 'approved', 'rejected'],
+    default: 'active'
+  },
+  verified: {
+    type: Boolean,
+    default: false
+  },
+  aiAnalysis: {
+    severity: String,
+    riskCategory: String,
+    urgencyScore: Number,
+    recommendedActions: [String],
+    communityRisk: String,
+    aiConfidence: Number
+  }
+}, {
+  timestamps: true
+});
 
-// Add index for location-based queries
-ReportSchema.index({ country: 1, state: 1, city: 1 });
-ReportSchema.index({ pincode: 1 });
-
-module.exports = mongoose.model('Report', ReportSchema);
-
-
+module.exports = mongoose.model('Report', reportSchema);

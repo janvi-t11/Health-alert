@@ -1,7 +1,4 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { api, getReports, createReport, approveReport, rejectReport } from '../services/api';
-import io from 'socket.io-client';
-import toast from 'react-hot-toast';
 
 const DataContext = createContext();
 
@@ -15,59 +12,25 @@ export const useData = () => {
 
 export const DataProvider = ({ children }) => {
   const [allReports, setAllReports] = useState([]);
-  const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [socket, setSocket] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   
-  // Filter reports based on user type - users only see approved reports
-  const reports = isAdmin ? allReports : allReports.filter(r => r.status === 'approved');
+  // Filter reports based on user type
+  const reports = isAdmin ? allReports : allReports.filter(r => r.verified === true);
 
   useEffect(() => {
-    // Initialize socket connection
-    const WS_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api').replace('/api', '');
-    const newSocket = io(WS_URL, { transports: ['websocket'] });
-    
-    newSocket.on('connect', () => {
-      console.log('Connected to server');
-    });
-
-    newSocket.on('new-report', (report) => {
-      setAllReports(prev => [report, ...prev]);
-      if (isAdmin) {
-        toast.success('New health report received!');
-      }
-    });
-
-    newSocket.on('report-updated', (updatedReport) => {
-      setAllReports(prev => prev.map(r => r._id === updatedReport._id ? updatedReport : r));
-      if (isAdmin) {
-        toast.success(`Report ${updatedReport.status === 'approved' ? 'approved' : 'rejected'} successfully!`);
-      }
-    });
-
-    newSocket.on('new-alert', (alert) => {
-      setAlerts(prev => [alert, ...prev]);
-      toast.success('New health alert detected!');
-    });
-
-    setSocket(newSocket);
-
-    // Fetch initial data
-    fetchData();
-
-    return () => {
-      newSocket.disconnect();
-    };
+    loadReports();
   }, []);
 
-  const fetchData = async () => {
+  const loadReports = async () => {
     try {
       setLoading(true);
-      const reportsRes = await getReports();
-      setAllReports(Array.isArray(reportsRes) ? reportsRes : []);
+      const response = await fetch('http://localhost:4000/api/reports');
+      if (!response.ok) throw new Error('Failed to fetch reports');
+      const data = await response.json();
+      setAllReports(data);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Failed to load reports:', error);
       setAllReports([]);
     } finally {
       setLoading(false);
@@ -76,133 +39,78 @@ export const DataProvider = ({ children }) => {
 
   const addReport = async (reportData) => {
     try {
-      const newReport = await createReport(reportData);
+      const response = await fetch('http://localhost:4000/api/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(reportData)
+      });
+      if (!response.ok) throw new Error('Failed to create report');
+      const newReport = await response.json();
       setAllReports(prev => [newReport, ...prev]);
       return newReport;
     } catch (error) {
-      console.error('Error adding report:', error);
+      console.error('Failed to create report:', error);
       throw error;
     }
   };
 
-  const updateReport = async (reportId, updates) => {
-    try {
-      const response = await api.patch(`/reports/${reportId}`, updates);
-      const updatedReport = response.data;
-      setAllReports(prev => prev.map(r => r._id === reportId ? updatedReport : r));
-      
-      // Emit socket event for real-time updates
-      if (socket) {
-        socket.emit('report-updated', updatedReport);
-      }
-      
-      return updatedReport;
-    } catch (error) {
-      console.error('Error updating report:', error);
-      throw error;
-    }
+  const setAdminMode = (admin) => {
+    setIsAdmin(admin);
   };
 
-  const verifyReport = async (reportId, verified) => {
-    try {
-      const response = await api.patch(`/reports/${reportId}/verify`, { verified });
-      const updatedReport = response.data;
-      setAllReports(prev => prev.map(r => r._id === reportId ? updatedReport : r));
-      
-      // Emit socket event for real-time updates
-      if (socket) {
-        socket.emit('report-updated', updatedReport);
-      }
-      
-      return updatedReport;
-    } catch (error) {
-      console.error('Error verifying report:', error);
-      throw error;
-    }
+  const getAnalytics = () => {
+    return {
+      totalReports: allReports.length,
+      verifiedReports: allReports.filter(r => r.verified).length,
+      pendingReports: allReports.filter(r => !r.verified).length,
+      diseaseBreakdown: allReports.reduce((acc, report) => {
+        acc[report.diseaseType] = (acc[report.diseaseType] || 0) + 1;
+        return acc;
+      }, {})
+    };
   };
-
-  const deleteReport = async (reportId) => {
-    try {
-      await api.delete(`/reports/${reportId}`);
-      setAllReports(prev => prev.filter(r => r._id !== reportId));
-      toast.success('Report deleted successfully');
-    } catch (error) {
-      console.error('Error deleting report:', error);
-      throw error;
-    }
-  };
-
-  const getReportsByStatus = (status) => {
-    switch (status) {
-      case 'pending':
-        return allReports.filter(r => r.status === 'active');
-      case 'accepted':
-        return allReports.filter(r => r.status === 'approved');
-      case 'rejected':
-        return allReports.filter(r => r.status === 'rejected');
-      default:
-        return allReports;
-    }
-  };
-
-  const getReportsByDiseaseType = (diseaseType) => {
-    return allReports.filter(r => r.healthIssue === diseaseType);
-  };
-
-  const getReportsByLocation = (location) => {
-    return allReports.filter(r => 
-      r.state?.toLowerCase().includes(location.toLowerCase()) ||
-      r.city?.toLowerCase().includes(location.toLowerCase()) ||
-      r.area?.toLowerCase().includes(location.toLowerCase())
-    );
-  };
-
-  // Set admin mode based on localStorage
-  useEffect(() => {
-    const userType = localStorage.getItem('userType');
-    setIsAdmin(userType === 'admin');
-  }, []);
 
   const value = {
     reports,
     allReports,
-    alerts,
     loading,
     addReport,
-    updateReport,
-    verifyReport,
-    deleteReport,
-    getReportsByStatus,
-    getReportsByDiseaseType,
-    getReportsByLocation,
-    refreshData: fetchData,
-    loadReports: fetchData,
+    loadReports,
+    getAnalytics,
     approveReport: async (reportId) => {
       try {
-        const updatedReport = await approveReport(reportId);
+        const response = await fetch(`http://localhost:4000/api/reports/${reportId}/approve`, {
+          method: 'PUT'
+        });
+        if (!response.ok) throw new Error('Failed to approve report');
+        const updatedReport = await response.json();
         setAllReports(prev => prev.map(report => 
           report._id === reportId ? updatedReport : report
         ));
-        toast.success('Report approved successfully!');
       } catch (error) {
-        console.error('Error approving report:', error);
-        toast.error('Failed to approve report');
+        console.error('Failed to approve report:', error);
+        throw error;
       }
     },
     rejectReport: async (reportId) => {
       try {
-        const updatedReport = await rejectReport(reportId);
+        const response = await fetch(`http://localhost:4000/api/reports/${reportId}/reject`, {
+          method: 'PUT'
+        });
+        if (!response.ok) throw new Error('Failed to reject report');
+        const updatedReport = await response.json();
         setAllReports(prev => prev.map(report => 
           report._id === reportId ? updatedReport : report
         ));
-        toast.success('Report rejected successfully!');
       } catch (error) {
-        console.error('Error rejecting report:', error);
-        toast.error('Failed to reject report');
+        console.error('Failed to reject report:', error);
+        throw error;
       }
     },
     isAdmin,
-    setAdminMode: setIsAdmin
+    setAdminMode
   };
 
   return (

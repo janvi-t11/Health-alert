@@ -213,6 +213,12 @@ export default function AdminDashboard() {
                         <div className="text-sm text-gray-500">
                           Issue Type: {report.diseaseType}
                         </div>
+                        {(report.aiAnalysis || report.urgencyScore || report.riskCategory) && (
+                          <div className="text-xs text-blue-600 mt-1">
+                            AI Risk: {report.aiAnalysis?.riskCategory || report.riskCategory || 'general'} | 
+                            Urgency: {report.aiAnalysis?.urgencyScore || report.urgencyScore || 5}/10
+                          </div>
+                        )}
                         {report.description && (
                           <div className="text-xs text-gray-400 mt-1">
                             {report.description.substring(0, 50)}...
@@ -329,6 +335,26 @@ export default function AdminDashboard() {
                     {new Date(selectedReport.createdAt).toLocaleString()}
                   </p>
                 </div>
+                {(selectedReport.aiAnalysis || selectedReport.urgencyScore || selectedReport.riskCategory) && (
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <label className="text-sm font-medium text-blue-900">AI Analysis:</label>
+                    <div className="text-sm text-blue-800 space-y-1">
+                      <p>Risk Category: <span className="font-medium">{selectedReport.aiAnalysis?.riskCategory || selectedReport.riskCategory || 'general'}</span></p>
+                      <p>Urgency Score: <span className="font-medium">{selectedReport.aiAnalysis?.urgencyScore || selectedReport.urgencyScore || 5}/10</span></p>
+                      <p>Community Risk: <span className="font-medium">{selectedReport.aiAnalysis?.communityRisk || selectedReport.communityRisk || 'medium'}</span></p>
+                      {(selectedReport.aiAnalysis?.recommendedActions || selectedReport.recommendedActions) && (
+                        <div>
+                          <p className="font-medium">Recommended Actions:</p>
+                          <ul className="list-disc list-inside text-xs">
+                            {(selectedReport.aiAnalysis?.recommendedActions || selectedReport.recommendedActions || ['Monitor symptoms', 'Consult healthcare provider']).map((action, idx) => (
+                              <li key={idx}>{action}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex justify-end space-x-3 mt-6">
                 <button
