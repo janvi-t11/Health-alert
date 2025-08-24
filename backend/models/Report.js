@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const reportSchema = new mongoose.Schema({
   diseaseType: {
     type: String,
-    required: true
+    required: false
   },
   healthIssue: {
     type: String,

@@ -11,7 +11,7 @@ import {
 import { createReport } from '../services/api';
 import toast from 'react-hot-toast';
 import { useData } from '../context/DataContext';
-import { analyzeHealthReport } from '../services/openai';
+import { aiService } from '../services/aiService';
 
 export default function ReportForm({ onSubmitted }) {
   const { addReport } = useData();
@@ -164,22 +164,28 @@ export default function ReportForm({ onSubmitted }) {
         description
       };
       
-      // AI Analysis
-      toast.loading('Analyzing report with AI...', { id: 'ai-analysis' });
-      const aiAnalysis = await analyzeHealthReport(reportData);
-      toast.dismiss('ai-analysis');
-      
-      // Enhanced report with AI insights
-      const enhancedReport = {
-        ...reportData,
-        aiAnalysis,
-        severity: aiAnalysis.severity || severity,
-        riskCategory: aiAnalysis.riskCategory,
-        urgencyScore: aiAnalysis.urgencyScore,
-        communityRisk: aiAnalysis.communityRisk
-      };
-      
-      const newReport = await addReport(enhancedReport);
+      let newReport;
+      try {
+        // AI Analysis
+        toast.loading('Analyzing report with AI...', { id: 'ai-analysis' });
+        const aiAnalysis = await aiService.analyzeHealthReport(reportData);
+        toast.dismiss('ai-analysis');
+        
+        // Enhanced report with AI insights
+        const enhancedReport = {
+          ...reportData,
+          aiAnalysis
+        };
+        
+        newReport = await addReport(enhancedReport);
+      } catch (aiError) {
+        toast.dismiss('ai-analysis');
+        console.error('AI analysis failed, submitting without AI:', aiError);
+        toast.error('AI analysis failed, submitting report without AI insights');
+        
+        // Submit without AI analysis
+        newReport = await addReport(reportData);
+      }
       
       setSuccess('Report submitted successfully!');
       setHealthIssue('');

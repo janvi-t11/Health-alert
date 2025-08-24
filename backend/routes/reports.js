@@ -74,7 +74,7 @@ router.delete('/:id', async (req, res) => {
     if (!report) {
       return res.status(404).json({ error: 'Report not found' });
     }
-    res.json({ message: 'Report deleted successfully' });
+    res.json({ message: 'Report deleted successfully', deletedReport: report });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

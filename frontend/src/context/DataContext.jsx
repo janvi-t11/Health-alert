@@ -110,7 +110,19 @@ export const DataProvider = ({ children }) => {
       }
     },
     isAdmin,
-    setAdminMode
+    setAdminMode,
+    deleteReport: async (reportId) => {
+      try {
+        const response = await fetch(`http://localhost:4000/api/reports/${reportId}`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) throw new Error('Failed to delete report');
+        setAllReports(prev => prev.filter(report => report._id !== reportId));
+      } catch (error) {
+        console.error('Failed to delete report:', error);
+        throw error;
+      }
+    }
   };
 
   return (

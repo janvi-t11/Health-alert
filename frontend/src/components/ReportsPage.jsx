@@ -164,12 +164,9 @@ export default function ReportsPage() {
                         {new Date(report.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Link
-                          to={`/report/${report._id}`}
-                          className="text-primary-600 hover:text-primary-900"
-                        >
-                          <EyeIcon className="h-4 w-4" />
-                        </Link>
+                        <span className="text-gray-400 text-xs">
+                          No actions taken yet
+                        </span>
                       </td>
                     </motion.tr>
                   ))}
