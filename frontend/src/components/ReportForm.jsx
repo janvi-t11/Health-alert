@@ -278,8 +278,7 @@ export default function ReportForm({ onSubmitted }) {
                 value={healthIssue}
                 onChange={(e) => setHealthIssue(e.target.value)}
                 className="input-field"
-                placeholder="Describe the health issue"
-                required
+                placeholder="Describe the health issue (optional)"
               />
             </div>
 
@@ -438,7 +437,7 @@ export default function ReportForm({ onSubmitted }) {
 
             {/* Submit Button */}
             <button
-              disabled={submitting || !healthIssue || !severity || !country || !state || !city || !area || !pincode}
+              disabled={submitting || !severity || !country || !state || !city || !area || !pincode}
               type="submit"
               className="w-full btn-primary py-3 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
