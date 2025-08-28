@@ -53,7 +53,11 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/auth', authRouter);
 
-// Root
+// Root routes
+app.get('/', (req, res) => {
+	res.json({ message: 'Health Alerts API is running', status: 'ok' });
+});
+
 app.get('/api/health', (req, res) => {
 	res.json({ status: 'ok' });
 });
