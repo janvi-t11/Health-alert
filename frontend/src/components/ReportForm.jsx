@@ -164,27 +164,8 @@ export default function ReportForm({ onSubmitted }) {
         description
       };
       
-      let newReport;
-      try {
-        // AI Analysis
-        toast.loading('Analyzing report with AI...', { id: 'ai-analysis' });
-        const aiAnalysis = await aiService.analyzeHealthReport(reportData);
-        toast.dismiss('ai-analysis');
-        
-        // Enhanced report with AI insights
-        const enhancedReport = {
-          ...reportData,
-          aiAnalysis
-        };
-        
-        newReport = await addReport(enhancedReport);
-      } catch (aiError) {
-        toast.dismiss('ai-analysis');
-        console.error('AI analysis failed, submitting without AI:', aiError);
-        
-        // Submit without AI analysis (no error toast to avoid confusion)
-        newReport = await addReport(reportData);
-      }
+      // Submit report without AI (temporarily disabled due to quota)
+      const newReport = await addReport(reportData);
       
       setSuccess('Report submitted successfully!');
       setHealthIssue('');
