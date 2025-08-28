@@ -181,9 +181,8 @@ export default function ReportForm({ onSubmitted }) {
       } catch (aiError) {
         toast.dismiss('ai-analysis');
         console.error('AI analysis failed, submitting without AI:', aiError);
-        toast.error('AI analysis failed, submitting report without AI insights');
         
-        // Submit without AI analysis
+        // Submit without AI analysis (no error toast to avoid confusion)
         newReport = await addReport(reportData);
       }
       
