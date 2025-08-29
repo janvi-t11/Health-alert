@@ -49,9 +49,11 @@ app.use((req, res, next) => {
 const reportsRouter = require('./routes/reports');
 const alertsRouter = require('./routes/alerts');
 const authRouter = require('./routes/auth');
+const usersRouter = require('./routes/users');
 app.use('/api/reports', reportsRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
 
 // Root routes
 app.get('/', (req, res) => {

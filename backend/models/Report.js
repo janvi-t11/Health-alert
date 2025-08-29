@@ -11,8 +11,13 @@ const reportSchema = new mongoose.Schema({
   },
   severity: {
     type: String,
-    enum: ['mild', 'moderate', 'severe', 'critical'],
-    required: true
+    enum: ['low', 'moderate', 'high', 'critical'],
+    default: 'low'
+  },
+  autoSeverity: {
+    severity: String,
+    score: Number,
+    confidence: Number
   },
   country: {
     type: String,
@@ -54,6 +59,22 @@ const reportSchema = new mongoose.Schema({
     recommendedActions: [String],
     communityRisk: String,
     aiConfidence: Number
+  },
+  images: [{
+    url: String,
+    caption: String,
+    filename: String
+  }],
+  reportedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
+  emergencyAlert: {
+    triggered: { type: Boolean, default: false },
+    priority: String,
+    notifiedAt: Date,
+    actions: [String]
   }
 }, {
   timestamps: true
