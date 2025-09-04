@@ -14,7 +14,7 @@ const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server, {
 	cors: {
-		origin: ['http://localhost:5173', 'http://localhost:5174', 'https://health-alert-frontend.onrender.com'],
+		origin: ['http://localhost:5173', 'http://localhost:5174', 'https://healthalertplatform.netlify.app'],
 		methods: ['GET', 'POST']
 	}
 });
@@ -27,7 +27,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Middlewares
 app.use(cors({
-	origin: ['http://localhost:5173', 'http://localhost:5174', 'https://health-alert-frontend.onrender.com']
+	origin: ['http://localhost:5173', 'http://localhost:5174', 'https://healthalertplatform.netlify.app']
 }));
 app.use(express.json());
 app.use(morgan('dev'));
@@ -50,10 +50,12 @@ const reportsRouter = require('./routes/reports');
 const alertsRouter = require('./routes/alerts');
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
+const aiRouter = require('./routes/ai');
 app.use('/api/reports', reportsRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/ai', aiRouter);
 
 // Root routes
 app.get('/', (req, res) => {
