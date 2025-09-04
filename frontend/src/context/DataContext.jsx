@@ -25,7 +25,7 @@ export const DataProvider = ({ children }) => {
   const loadReports = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:4000/api/reports');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://health-alert-backend.onrender.com/api'}/reports`);
       if (!response.ok) throw new Error('Failed to fetch reports');
       const data = await response.json();
       setAllReports(data);
@@ -39,7 +39,7 @@ export const DataProvider = ({ children }) => {
 
   const addReport = async (reportData) => {
     try {
-      const response = await fetch('http://localhost:4000/api/reports', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://health-alert-backend.onrender.com/api'}/reports`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -81,7 +81,7 @@ export const DataProvider = ({ children }) => {
     getAnalytics,
     approveReport: async (reportId) => {
       try {
-        const response = await fetch(`http://localhost:4000/api/reports/${reportId}/approve`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://health-alert-backend.onrender.com/api'}/reports/${reportId}/approve`, {
           method: 'PUT'
         });
         if (!response.ok) throw new Error('Failed to approve report');
@@ -96,7 +96,7 @@ export const DataProvider = ({ children }) => {
     },
     rejectReport: async (reportId) => {
       try {
-        const response = await fetch(`http://localhost:4000/api/reports/${reportId}/reject`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://health-alert-backend.onrender.com/api'}/reports/${reportId}/reject`, {
           method: 'PUT'
         });
         if (!response.ok) throw new Error('Failed to reject report');
@@ -113,7 +113,7 @@ export const DataProvider = ({ children }) => {
     setAdminMode,
     deleteReport: async (reportId) => {
       try {
-        const response = await fetch(`http://localhost:4000/api/reports/${reportId}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://health-alert-backend.onrender.com/api'}/reports/${reportId}`, {
           method: 'DELETE'
         });
         if (!response.ok) throw new Error('Failed to delete report');
