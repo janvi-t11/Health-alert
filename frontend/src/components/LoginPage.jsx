@@ -25,23 +25,25 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('http://localhost:4000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
       
-      // Simple validation for demo
-      if (formData.email && formData.password) {
-        // Demo validation - accept specific credentials or any email with 'demo' password
-        if ((formData.email === 'demo@healthalerts.com' && formData.password === 'demo123') || 
-            formData.password === 'demo') {
-          toast.success('Login successful!');
-          navigate('/dashboard');
-        } else {
-          toast.error('Invalid email or password');
-        }
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userEmail', data.user.email);
+        toast.success('Login successful!');
+        navigate('/dashboard');
       } else {
-        toast.error('Please fill in all fields');
+        toast.error(data.error || 'Invalid email or password');
       }
     } catch (error) {
+      console.error('Login error:', error);
       toast.error('Login failed. Please try again.');
     } finally {
       setIsLoading(false);

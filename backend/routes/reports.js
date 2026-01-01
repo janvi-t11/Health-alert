@@ -44,7 +44,7 @@ router.post('/', upload.array('images', 5), async (req, res) => {
       severity: severityAnalysis.severity,
       autoSeverity: severityAnalysis,
       images: images,
-      reportedBy: req.user?._id || null
+      reportedBy: null
     };
     
     const report = new Report(reportData);

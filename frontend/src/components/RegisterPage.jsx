@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon, HeartIcon, CheckIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { authAPI } from '../services/api';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -72,13 +73,27 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await authAPI.register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        location: formData.location
+      });
       
-      toast.success('Account created successfully!');
-      navigate('/dashboard');
+      if (response.success) {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('userRole', response.user.role);
+        localStorage.setItem('userEmail', response.user.email);
+        toast.success('Account created successfully!');
+        navigate('/dashboard');
+      } else {
+        toast.error(response.error || 'Registration failed');
+      }
     } catch (error) {
-      toast.error('Registration failed. Please try again.');
+      console.error('Registration error:', error);
+      toast.error(error.response?.data?.error || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -263,6 +278,7 @@ export default function RegisterPage() {
                       onChange={handleChange}
                       className="input-field pr-10"
                       placeholder="Create a strong password"
+                      autoComplete="new-password"
                       required
                     />
                     <button
@@ -311,6 +327,7 @@ export default function RegisterPage() {
                       onChange={handleChange}
                       className="input-field pr-10"
                       placeholder="Confirm your password"
+                      autoComplete="new-password"
                       required
                     />
                     <button

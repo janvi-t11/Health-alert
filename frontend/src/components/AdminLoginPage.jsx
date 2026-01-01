@@ -25,23 +25,25 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('http://localhost:4000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
       
-      // Admin validation for demo
-      if (formData.email && formData.password) {
-        // Demo validation - accept specific admin credentials
-        if ((formData.email === 'admin@healthalerts.com' && formData.password === 'admin123') || 
-            formData.password === 'admin') {
-          toast.success('Admin login successful!');
-          navigate('/admin/dashboard');
-        } else {
-          toast.error('Invalid admin credentials');
-        }
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userEmail', data.user.email);
+        toast.success('Admin login successful!');
+        navigate('/admin/dashboard');
       } else {
-        toast.error('Please fill in all fields');
+        toast.error(data.error || 'Invalid admin credentials');
       }
     } catch (error) {
+      console.error('Login error:', error);
       toast.error('Login failed. Please try again.');
     } finally {
       setIsLoading(false);
@@ -102,6 +104,7 @@ export default function AdminLoginPage() {
                   onChange={handleChange}
                   className="input-field pr-10"
                   placeholder="Enter admin password"
+                  autoComplete="current-password"
                   required
                 />
                 <button

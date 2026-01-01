@@ -25,6 +25,7 @@ export default function ReportForm({ onSubmitted }) {
   const [city, setCity] = useState('');
   const [area, setArea] = useState('');
   const [pincode, setPincode] = useState('');
+  const [phone, setPhone] = useState('');
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -161,11 +162,16 @@ export default function ReportForm({ onSubmitted }) {
         city,
         area,
         pincode,
+        phone,
         description
       };
       
+      console.log('Submitting report data:', reportData);
+      
       // Submit report without AI (temporarily disabled due to quota)
       const newReport = await addReport(reportData);
+      
+      console.log('Report created:', newReport);
       
       setSuccess('Report submitted successfully!');
       setHealthIssue('');
@@ -174,6 +180,7 @@ export default function ReportForm({ onSubmitted }) {
       setCity('');
       setArea('');
       setPincode('');
+      setPhone('');
       setDescription('');
       setPhoto(null);
       onSubmitted?.(newReport);
@@ -282,6 +289,24 @@ export default function ReportForm({ onSubmitted }) {
               </select>
             </div>
 
+            {/* Phone Number */}
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number *
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="input-field"
+                placeholder="+919876543210"
+                autoComplete="tel"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">Required for SMS health alerts (e.g., +919876543210)</p>
+            </div>
+
             {/* Description */}
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
@@ -351,6 +376,7 @@ export default function ReportForm({ onSubmitted }) {
                     className="input-field"
                     placeholder="Enter 6-digit pincode (e.g., 400058)"
                     maxLength={6}
+                    autoComplete="postal-code"
                     required
                   />
                   {pincodeLoading && (
@@ -367,6 +393,7 @@ export default function ReportForm({ onSubmitted }) {
                     value={country}
                     className="input-field bg-gray-50"
                     placeholder="Auto-filled"
+                    autoComplete="country"
                     readOnly
                   />
                 </div>
@@ -381,6 +408,7 @@ export default function ReportForm({ onSubmitted }) {
                     onChange={(e) => setState(e.target.value)}
                     className={`input-field ${state ? 'bg-gray-50' : ''}`}
                     placeholder={state ? 'Auto-filled from pincode' : 'Will auto-fill from pincode'}
+                    autoComplete="address-level1"
                     required
                   />
                 </div>
@@ -395,6 +423,7 @@ export default function ReportForm({ onSubmitted }) {
                     onChange={(e) => setCity(e.target.value)}
                     className={`input-field ${city ? 'bg-gray-50' : ''}`}
                     placeholder={city ? 'Auto-filled from pincode' : 'Will auto-fill from pincode'}
+                    autoComplete="address-level2"
                     required
                   />
                 </div>
@@ -409,6 +438,7 @@ export default function ReportForm({ onSubmitted }) {
                     onChange={(e) => setArea(e.target.value)}
                     className={`input-field ${area ? 'bg-gray-50' : ''}`}
                     placeholder={area ? 'Auto-filled from pincode' : 'Will auto-fill from pincode'}
+                    autoComplete="address-line1"
                     required
                   />
                 </div>
@@ -417,7 +447,7 @@ export default function ReportForm({ onSubmitted }) {
 
             {/* Submit Button */}
             <button
-              disabled={submitting || !severity || !country || !state || !city || !area || !pincode}
+              disabled={submitting || !severity || !country || !state || !city || !area || !pincode || !phone}
               type="submit"
               className="w-full btn-primary py-3 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
