@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Hardcoded backend URL - 100% working solution
-const API_BASE_URL = 'https://health-alert-backend.onrender.com/api';
+// Use local backend for development
+const API_BASE_URL = 'http://localhost:4000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -117,8 +117,32 @@ export const healthAPI = {
   }
 };
 
+// Auth API
+export const authAPI = {
+  // Login user
+  login: async (credentials) => {
+    const response = await api.post('/auth/login', credentials);
+    return response.data;
+  },
+
+  // Register user
+  register: async (userData) => {
+    const response = await api.post('/auth/register', userData);
+    return response.data;
+  },
+
+  // Admin register
+  adminRegister: async (adminData) => {
+    const response = await api.post('/auth/admin/register', adminData);
+    return response.data;
+  }
+};
+
 // Export the main api instance for direct use
 export { api };
+
+// Export auth methods for backward compatibility
+export const { login, register } = authAPI;
 
 // Export individual API methods for backward compatibility
 export const {
