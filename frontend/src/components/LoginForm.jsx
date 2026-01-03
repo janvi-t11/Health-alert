@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Eye, EyeOff } from 'lucide-react';
-import { api } from '../services/api';
+import { authAPI } from '../services/api';
 
 const LoginForm = ({ onSuccess }) => {
   const navigate = useNavigate();
@@ -20,16 +20,22 @@ const LoginForm = ({ onSuccess }) => {
     setError('');
 
     try {
-      const response = await api.login(formData);
+      const response = await authAPI.login({
+        email: formData.email,
+        password: formData.password
+      });
+      
       if (response.success) {
         localStorage.setItem('token', response.token);
-        localStorage.setItem('userType', response.user.userType);
-        onSuccess(response.user.userType);
+        localStorage.setItem('userRole', response.user.role);
+        localStorage.setItem('userEmail', response.user.email);
+        onSuccess(response.user.role);
       } else {
         setError(response.error || 'Login failed');
       }
     } catch (error) {
-      setError('Network error. Please try again.');
+      console.error('Login error:', error);
+      setError(error.response?.data?.error || 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -96,6 +102,7 @@ const LoginForm = ({ onSuccess }) => {
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                autoComplete="current-password"
                 required
               />
               <button

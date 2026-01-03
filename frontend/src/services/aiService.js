@@ -1,9 +1,4 @@
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-});
+import { API_BASE_URL } from '../api';
 
 export const aiService = {
   analyzeHealthReport: async (reportData) => {
@@ -26,23 +21,18 @@ Provide JSON response:
   "aiConfidence": 0.0-1.0
 }`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are a health expert AI. Respond only with valid JSON."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 500
+      const resp = await fetch(`${API_BASE_URL}/ai/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(reportData)
       });
-
-      return JSON.parse(completion.choices[0].message.content);
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || 'AI analysis failed');
+      }
+      return await resp.json();
     } catch (error) {
       console.error('AI Analysis failed:', error);
       throw error;

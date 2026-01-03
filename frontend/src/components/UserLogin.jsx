@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 export default function UserLogin() {
   const [formData, setFormData] = useState({
@@ -36,12 +38,29 @@ export default function UserLogin() {
     if (!validateForm()) return;
     
     setIsLoading(true);
-    setTimeout(() => {
+    
+    try {
+      const response = await authAPI.login({
+        email: formData.emailOrUsername,
+        password: formData.password
+      });
+      
+      if (response.success) {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('userRole', response.user.role);
+        localStorage.setItem('userEmail', response.user.email);
+        localStorage.setItem('isLoggedIn', 'true');
+        toast.success('Login successful!');
+        navigate('/dashboard');
+      } else {
+        toast.error(response.error || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error(error.response?.data?.error || 'Login failed. Please try again.');
+    } finally {
       setIsLoading(false);
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userRole', 'user');
-      navigate('/dashboard');
-    }, 1500);
+    }
   };
 
   return (
@@ -165,7 +184,7 @@ export default function UserLogin() {
             <p className="text-gray-300 mb-4">
               Don't have an account?{' '}
               <button
-                onClick={() => alert('Signup functionality will be implemented soon.')}
+                onClick={() => navigate('/register')}
                 className="text-blue-300 hover:text-blue-100 font-medium transition-colors duration-200 hover:underline"
               >
                 Sign up here

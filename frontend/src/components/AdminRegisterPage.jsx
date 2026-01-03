@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon, ShieldCheckIcon, CheckIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { authAPI } from '../services/api';
 
 export default function AdminRegisterPage() {
   const [formData, setFormData] = useState({
@@ -72,13 +73,27 @@ export default function AdminRegisterPage() {
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await authAPI.adminRegister({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        adminCode: formData.adminCode,
+        department: formData.department
+      });
       
-      toast.success('Admin account created successfully!');
-      navigate('/admin/dashboard');
+      if (response.success) {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('userRole', response.user.role);
+        localStorage.setItem('userEmail', response.user.email);
+        toast.success('Admin account created successfully!');
+        navigate('/admin/dashboard');
+      } else {
+        toast.error(response.error || 'Registration failed');
+      }
     } catch (error) {
-      toast.error('Registration failed. Please try again.');
+      console.error('Admin registration error:', error);
+      toast.error(error.response?.data?.error || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -269,6 +284,7 @@ export default function AdminRegisterPage() {
                       onChange={handleChange}
                       className="input-field pr-10"
                       placeholder="Create a strong password"
+                      autoComplete="new-password"
                       required
                     />
                     <button
@@ -317,6 +333,7 @@ export default function AdminRegisterPage() {
                       onChange={handleChange}
                       className="input-field pr-10"
                       placeholder="Confirm your password"
+                      autoComplete="new-password"
                       required
                     />
                     <button

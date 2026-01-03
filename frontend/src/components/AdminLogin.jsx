@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../services/api';
 
 export default function AdminLogin() {
   const [formData, setFormData] = useState({
@@ -36,12 +37,27 @@ export default function AdminLogin() {
     if (!validateForm()) return;
     
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const response = await authAPI.login({
+        email: formData.email,
+        password: formData.password
+      });
+      
+      if (response.success) {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('userRole', response.user.role);
+        localStorage.setItem('userEmail', response.user.email);
+        localStorage.setItem('isLoggedIn', 'true');
+        navigate('/dashboard');
+      } else {
+        setErrors({ password: response.error || 'Invalid credentials' });
+      }
+    } catch (error) {
+      console.error('Admin login error:', error);
+      setErrors({ password: error.response?.data?.error || 'Login failed. Please try again.' });
+    } finally {
       setIsLoading(false);
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userRole', 'admin');
-      navigate('/dashboard');
-    }, 1500);
+    }
   };
 
   return (
@@ -153,6 +169,15 @@ export default function AdminLogin() {
 
           <div className="mt-8 text-center">
             <p className="text-gray-300">
+              Need admin access?{' '}
+              <button
+                onClick={() => navigate('/admin/register')}
+                className="text-blue-300 hover:text-blue-100 font-medium transition-colors duration-200 hover:underline"
+              >
+                Register Here
+              </button>
+            </p>
+            <p className="text-gray-300 mt-2">
               Not an admin?{' '}
               <button
                 onClick={() => navigate('/user-login')}

@@ -16,6 +16,7 @@ import {
   TrashIcon
 } from '@heroicons/react/24/outline';
 import { useData } from '../context/DataContext';
+import { sendHealthAlert, shouldTriggerAlert } from '../utils/smsService';
 import toast from 'react-hot-toast';
 
 export default function AdminDashboard() {
@@ -23,6 +24,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('pending');
   const [selectedReport, setSelectedReport] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showAreaAlerts, setShowAreaAlerts] = useState(false);
   const navigate = useNavigate();
 
   const stats = {
@@ -49,6 +51,24 @@ export default function AdminDashboard() {
     try {
       await approveReport(reportId);
       toast.success('Report approved successfully!');
+      
+      const approvedReport = allReports.find(r => r._id === reportId);
+      if (approvedReport && shouldTriggerAlert(allReports, approvedReport)) {
+        const phoneNumbers = allReports
+          .filter(r => r.status === 'approved' && r.area === approvedReport.area && r.city === approvedReport.city && r.phone)
+          .map(r => r.phone);
+        
+        if (phoneNumbers.length > 0) {
+          await sendHealthAlert(
+            phoneNumbers,
+            approvedReport.healthIssue,
+            approvedReport.area,
+            approvedReport.city,
+            phoneNumbers.length
+          );
+        }
+      }
+      
       setShowModal(false);
       setSelectedReport(null);
     } catch (error) {
@@ -76,6 +96,68 @@ export default function AdminDashboard() {
         toast.error('Failed to delete report');
       }
     }
+  };
+
+  const handleAreaAlert = async (area, city) => {
+    const areaReports = allReports.filter(r => 
+      r.status === 'approved' && 
+      r.area === area && 
+      r.city === city && 
+      (r.phone || r.phoneNumber || r.mobile)
+    );
+    
+    if (areaReports.length === 0) {
+      toast.error('No users found in this area');
+      return;
+    }
+    
+    const phoneNumbers = areaReports.map(r => r.phone || r.phoneNumber || r.mobile);
+    const healthIssues = [...new Set(areaReports.map(r => r.healthIssue || r.diseaseType))];
+    
+    console.log('Sending alert to phones:', phoneNumbers);
+    console.log('Health issues:', healthIssues);
+    
+    try {
+      await sendHealthAlert(
+        phoneNumbers,
+        healthIssues.join(', '),
+        area,
+        city,
+        areaReports.length
+      );
+      toast.success(`Alert sent to ${phoneNumbers.length} users in ${area}`);
+    } catch (error) {
+      toast.error('Failed to send area alert');
+    }
+  };
+
+  const getUniqueAreas = () => {
+    const areas = new Map();
+    allReports
+      .filter(r => r.status === 'approved')
+      .forEach(r => {
+        const key = `${r.area}, ${r.city}`;
+        if (!areas.has(key)) {
+          areas.set(key, {
+            area: r.area,
+            city: r.city,
+            count: 0,
+            users: 0
+          });
+        }
+        const areaData = areas.get(key);
+        areaData.count++;
+        // Check multiple possible phone field names
+        if (r.phone || r.phoneNumber || r.mobile) {
+          areaData.users++;
+        }
+      });
+    
+    // Debug log
+    console.log('Area data:', Array.from(areas.values()));
+    console.log('Sample report:', allReports[0]);
+    
+    return Array.from(areas.values());
   };
 
   const handleLogout = () => {
@@ -112,6 +194,12 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setShowAreaAlerts(!showAreaAlerts)}
+                className="btn-secondary"
+              >
+                Area Alerts
+              </button>
               <Link to="/map" className="btn-secondary">
                 View Map
               </Link>
@@ -127,6 +215,41 @@ export default function AdminDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Area Alerts Panel */}
+        {showAreaAlerts && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="card mb-6"
+          >
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Send Area-Based Alerts</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {getUniqueAreas().map((areaData, index) => (
+                <div key={index} className="border rounded-lg p-4 hover:bg-gray-50">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{areaData.area}</h4>
+                      <p className="text-sm text-gray-500">{areaData.city}</p>
+                    </div>
+                    <button
+                      onClick={() => handleAreaAlert(areaData.area, areaData.city)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded"
+                      disabled={areaData.users === 0}
+                    >
+                      Send Alert
+                    </button>
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    <p>{areaData.count} reports • {areaData.users} users</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {getUniqueAreas().length === 0 && (
+              <p className="text-gray-500 text-center py-4">No approved reports with user data found</p>
+            )}
+          </motion.div>
+        )}
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {tabs.map((tab, index) => (

@@ -6,7 +6,7 @@ import LandingPage from './components/LandingPage'
 import LoginPage from './components/LoginPage'
 import RegisterPage from './components/RegisterPage'
 import AdminLoginPage from './components/AdminLoginPage'
-import AdminRegisterPage from './components/AdminRegisterPage'
+import AdminRegister from './components/AdminRegister'
 import ReportsPage from './components/ReportsPage'
 import AlertsPage from './components/AlertsPage'
 import AdminDashboard from './components/AdminDashboard'
@@ -50,7 +50,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route path="/admin/register" element={<AdminRegisterPage />} />
+          <Route path="/admin/register" element={<AdminRegister />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/map" element={<MapView />} />
