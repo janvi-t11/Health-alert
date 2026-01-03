@@ -4,10 +4,9 @@ const User = require('../models/User');
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 
-// In-memory user storage for demo (replace with database in production)
-const users = [
-  { email: 'demo@healthalerts.com', password: 'demo123', role: 'user' }
-];
+// Demo credentials
+const DEMO_USER = { email: 'demo@healthalerts.com', password: 'demo123' };
+const DEMO_ADMIN = { email: 'admin@healthalerts.com', password: 'admin123' };
 
 // Admin register route
 router.post('/admin/register', async (req, res) => {
@@ -56,40 +55,39 @@ router.post('/admin/register', async (req, res) => {
 // Register route
 router.post('/register', async (req, res) => {
   try {
-    const { firstName, lastName, email, password, phone, location } = req.body;
+    const { firstName, lastName, email, password, phone } = req.body;
     
     // Check if user already exists
-    const existingUser = users.find(user => user.email === email);
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
     
     // Create new user
-    const newUser = {
+    const newUser = new User({
+      name: `${firstName} ${lastName}`,
       email,
-      password, // In production, hash this password
-      role: 'user',
-      firstName,
-      lastName,
+      password,
       phone,
-      location
-    };
+      profile: { phone }
+    });
     
-    users.push(newUser);
+    await newUser.save();
     
     // Generate token
     const token = jwt.sign(
-      { email: newUser.email, role: newUser.role },
+      { id: newUser._id, email: newUser.email, role: 'user' },
       process.env.JWT_SECRET || 'fallback-secret',
       { expiresIn: '24h' }
     );
     
     res.json({
       success: true,
-      user: { email: newUser.email, role: newUser.role },
+      user: { email: newUser.email, role: 'user', name: newUser.name },
       token
     });
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ error: 'Registration failed' });
   }
 });
@@ -99,18 +97,45 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    // Check in-memory users first (for demo users)
-    const demoUser = users.find(u => u.email === email && u.password === password);
-    if (demoUser) {
+    // Check demo user
+    if (email === DEMO_USER.email && password === DEMO_USER.password) {
       const token = jwt.sign(
-        { email: demoUser.email, role: demoUser.role },
+        { email: DEMO_USER.email, role: 'user' },
         process.env.JWT_SECRET || 'fallback-secret',
         { expiresIn: '24h' }
       );
-      
       return res.json({
         success: true,
-        user: { email: demoUser.email, role: demoUser.role },
+        user: { email: DEMO_USER.email, role: 'user' },
+        token
+      });
+    }
+    
+    // Check demo admin
+    if (email === DEMO_ADMIN.email && password === DEMO_ADMIN.password) {
+      const token = jwt.sign(
+        { email: DEMO_ADMIN.email, role: 'admin' },
+        process.env.JWT_SECRET || 'fallback-secret',
+        { expiresIn: '24h' }
+      );
+      return res.json({
+        success: true,
+        user: { email: DEMO_ADMIN.email, role: 'admin', name: 'Demo Admin' },
+        token
+      });
+    }
+    
+    // Check registered users in database
+    const user = await User.findOne({ email });
+    if (user && await user.comparePassword(password)) {
+      const token = jwt.sign(
+        { id: user._id, email: user.email, role: 'user' },
+        process.env.JWT_SECRET || 'fallback-secret',
+        { expiresIn: '24h' }
+      );
+      return res.json({
+        success: true,
+        user: { email: user.email, role: 'user', name: user.name },
         token
       });
     }
@@ -123,7 +148,6 @@ router.post('/login', async (req, res) => {
         process.env.JWT_SECRET || 'fallback-secret',
         { expiresIn: '24h' }
       );
-      
       return res.json({
         success: true,
         user: { email: admin.email, role: 'admin', name: admin.name },
