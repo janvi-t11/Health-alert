@@ -27,7 +27,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Middlewares
 app.use(cors({
-	origin: ['http://localhost:5173', 'http://localhost:5174', 'https://healthalertplatform.netlify.app']
+	origin: ['http://localhost:5173', 'http://localhost:5174', 'https://healthalertplatform.netlify.app', 'https://health-alert.vercel.app']
 }));
 app.use(express.json());
 app.use(morgan('dev'));
@@ -66,18 +66,18 @@ app.get('/api/health', (req, res) => {
 	res.json({ status: 'ok' });
 });
 
-// DB connection and server start
-const PORT = process.env.PORT || 4000;
+// DB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/health_alerts';
 
 mongoose.connect(MONGODB_URI)
-	.then(() => {
-		console.log('Connected to MongoDB');
-		server.listen(PORT, () => console.log(`API server listening on port ${PORT}`));
-	})
-	.catch((err) => {
-		console.error('MongoDB connection error:', err.message);
-		process.exit(1);
-	});
+	.then(() => console.log('Connected to MongoDB'))
+	.catch((err) => console.error('MongoDB connection error:', err.message));
 
-
+// For Vercel serverless
+if (process.env.VERCEL) {
+	module.exports = app;
+} else {
+	// For local development
+	const PORT = process.env.PORT || 4000;
+	server.listen(PORT, () => console.log(`API server listening on port ${PORT}`));
+}
