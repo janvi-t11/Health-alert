@@ -25,7 +25,45 @@ export default function AdminDashboard() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showAreaAlerts, setShowAreaAlerts] = useState(false);
+  const [userStats, setUserStats] = useState({ users: 0, admins: 0 });
+  const [usersByLocation, setUsersByLocation] = useState([]);
+  const [showUsersPanel, setShowUsersPanel] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchUserStats();
+    fetchUsersByLocation();
+  }, []);
+
+  const fetchUserStats = async () => {
+    try {
+      const API_URL = process.env.NODE_ENV === 'production' 
+        ? 'https://health-alert-backend.onrender.com/api/auth/stats'
+        : 'http://localhost:4000/api/auth/stats';
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      if (data.success) {
+        setUserStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user stats:', error);
+    }
+  };
+
+  const fetchUsersByLocation = async () => {
+    try {
+      const API_URL = process.env.NODE_ENV === 'production'
+        ? 'https://health-alert-backend.onrender.com/api/auth/users-by-location'
+        : 'http://localhost:4000/api/auth/users-by-location';
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      if (data.success) {
+        setUsersByLocation(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users by location:', error);
+    }
+  };
 
   const stats = {
     total: allReports.length,
@@ -195,6 +233,12 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <button
+                onClick={() => setShowUsersPanel(!showUsersPanel)}
+                className="btn-secondary"
+              >
+                View Users
+              </button>
+              <button
                 onClick={() => setShowAreaAlerts(!showAreaAlerts)}
                 className="btn-secondary"
               >
@@ -215,6 +259,56 @@ export default function AdminDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Users Panel */}
+        {showUsersPanel && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="card mb-6"
+          >
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Registered Users by Location</h3>
+            <div className="space-y-4">
+              {usersByLocation.map((locationData, index) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{locationData.location}</h4>
+                      <p className="text-sm text-gray-500">{locationData.count} users registered</p>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Registered</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {locationData.users.map((user, userIndex) => (
+                          <tr key={userIndex}>
+                            <td className="px-4 py-2 text-sm text-gray-900">{user.name}</td>
+                            <td className="px-4 py-2 text-sm text-gray-600">{user.email}</td>
+                            <td className="px-4 py-2 text-sm text-gray-600">{user.phone || 'N/A'}</td>
+                            <td className="px-4 py-2 text-sm text-gray-500">
+                              {new Date(user.registeredAt).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {usersByLocation.length === 0 && (
+              <p className="text-gray-500 text-center py-4">No registered users found</p>
+            )}
+          </motion.div>
+        )}
+
         {/* Area Alerts Panel */}
         {showAreaAlerts && (
           <motion.div
@@ -251,7 +345,24 @@ export default function AdminDashboard() {
           </motion.div>
         )}
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          {/* User Stats Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="card"
+          >
+            <div className="flex items-center">
+              <div className="p-3 rounded-lg bg-purple-500">
+                <UserGroupIcon className="h-6 w-6 text-white" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Users</p>
+                <p className="text-2xl font-bold text-gray-900">{userStats.users}</p>
+              </div>
+            </div>
+          </motion.div>
           {tabs.map((tab, index) => (
             <motion.div
               key={tab.id}

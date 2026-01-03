@@ -29,12 +29,16 @@ export default function RegisterPage() {
   };
 
   const validateStep1 = () => {
-    if (!formData.firstName || !formData.lastName || !formData.email) {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
       toast.error('Please fill in all required fields');
       return false;
     }
     if (!formData.email.includes('@')) {
       toast.error('Please enter a valid email address');
+      return false;
+    }
+    if (formData.phone.length < 10) {
+      toast.error('Please enter a valid phone number');
       return false;
     }
     return true;
@@ -227,7 +231,7 @@ export default function RegisterPage() {
 
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number
+                    Phone Number *
                   </label>
                   <input
                     type="tel"
@@ -236,8 +240,10 @@ export default function RegisterPage() {
                     value={formData.phone}
                     onChange={handleChange}
                     className="input-field"
-                    placeholder="+1 (555) 123-4567"
+                    placeholder="+91 9876543210"
+                    required
                   />
+                  <p className="text-xs text-gray-500 mt-1">For health alerts and notifications</p>
                 </div>
 
                 <div>

@@ -162,4 +162,59 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Get user stats (for admin dashboard)
+router.get('/stats', async (req, res) => {
+  try {
+    const userCount = await User.countDocuments();
+    const adminCount = await Admin.countDocuments();
+    
+    res.json({
+      success: true,
+      stats: {
+        users: userCount,
+        admins: adminCount,
+        total: userCount + adminCount
+      }
+    });
+  } catch (error) {
+    console.error('Stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// Get users by location (for admin dashboard)
+router.get('/users-by-location', async (req, res) => {
+  try {
+    const users = await User.find({}, 'name email phone profile.location createdAt').lean();
+    
+    // Group users by location
+    const locationMap = {};
+    users.forEach(user => {
+      const location = user.profile?.location || 'Unknown';
+      if (!locationMap[location]) {
+        locationMap[location] = {
+          location,
+          users: [],
+          count: 0
+        };
+      }
+      locationMap[location].users.push({
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        registeredAt: user.createdAt
+      });
+      locationMap[location].count++;
+    });
+    
+    res.json({
+      success: true,
+      data: Object.values(locationMap)
+    });
+  } catch (error) {
+    console.error('Users by location error:', error);
+    res.status(500).json({ error: 'Failed to fetch users by location' });
+  }
+});
+
 module.exports = router;

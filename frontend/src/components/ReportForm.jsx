@@ -25,7 +25,6 @@ export default function ReportForm({ onSubmitted }) {
   const [city, setCity] = useState('');
   const [area, setArea] = useState('');
   const [pincode, setPincode] = useState('');
-  const [phone, setPhone] = useState('');
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -162,7 +161,6 @@ export default function ReportForm({ onSubmitted }) {
         city,
         area,
         pincode,
-        phone,
         description
       };
       
@@ -180,7 +178,6 @@ export default function ReportForm({ onSubmitted }) {
       setCity('');
       setArea('');
       setPincode('');
-      setPhone('');
       setDescription('');
       setPhoto(null);
       onSubmitted?.(newReport);
@@ -287,24 +284,6 @@ export default function ReportForm({ onSubmitted }) {
                 <option value="severe">Severe</option>
                 <option value="critical">Critical</option>
               </select>
-            </div>
-
-            {/* Phone Number */}
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number *
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="input-field"
-                placeholder="+919876543210"
-                autoComplete="tel"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">Required for SMS health alerts (e.g., +919876543210)</p>
             </div>
 
             {/* Description */}
@@ -447,7 +426,7 @@ export default function ReportForm({ onSubmitted }) {
 
             {/* Submit Button */}
             <button
-              disabled={submitting || !severity || !country || !state || !city || !area || !pincode || !phone}
+              disabled={submitting || !severity || !country || !state || !city || !area || !pincode}
               type="submit"
               className="w-full btn-primary py-3 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
