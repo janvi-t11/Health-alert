@@ -137,31 +137,39 @@ export default function AdminDashboard() {
   };
 
   const handleAreaAlert = async (area, city) => {
-    const areaReports = allReports.filter(r => 
-      r.status === 'approved' && 
-      r.area === area && 
-      r.city === city && 
-      (r.phone || r.phoneNumber || r.mobile)
-    );
+    // Find users in this location
+    const locationKey = `${area}, ${city}`;
+    const locationData = usersByLocation.find(loc => loc.location === locationKey);
     
-    if (areaReports.length === 0) {
+    if (!locationData || locationData.users.length === 0) {
       toast.error('No users found in this area');
       return;
     }
     
-    const phoneNumbers = areaReports.map(r => r.phone || r.phoneNumber || r.mobile);
-    const healthIssues = [...new Set(areaReports.map(r => r.healthIssue || r.diseaseType))];
+    const phoneNumbers = locationData.users
+      .map(u => u.phone)
+      .filter(phone => phone);
     
-    console.log('Sending alert to phones:', phoneNumbers);
-    console.log('Health issues:', healthIssues);
+    if (phoneNumbers.length === 0) {
+      toast.error('No phone numbers available for users in this area');
+      return;
+    }
+    
+    // Get health issues from reports in this area
+    const areaReports = allReports.filter(r => 
+      r.status === 'approved' && 
+      r.area === area && 
+      r.city === city
+    );
+    const healthIssues = [...new Set(areaReports.map(r => r.healthIssue || r.diseaseType))];
     
     try {
       await sendHealthAlert(
         phoneNumbers,
-        healthIssues.join(', '),
+        healthIssues.join(', ') || 'Health Alert',
         area,
         city,
-        areaReports.length
+        phoneNumbers.length
       );
       toast.success(`Alert sent to ${phoneNumbers.length} users in ${area}`);
     } catch (error) {
@@ -171,6 +179,8 @@ export default function AdminDashboard() {
 
   const getUniqueAreas = () => {
     const areas = new Map();
+    
+    // Count reports by area
     allReports
       .filter(r => r.status === 'approved')
       .forEach(r => {
@@ -183,17 +193,27 @@ export default function AdminDashboard() {
             users: 0
           });
         }
-        const areaData = areas.get(key);
-        areaData.count++;
-        // Check multiple possible phone field names
-        if (r.phone || r.phoneNumber || r.mobile) {
-          areaData.users++;
-        }
+        areas.get(key).count++;
       });
     
-    // Debug log
-    console.log('Area data:', Array.from(areas.values()));
-    console.log('Sample report:', allReports[0]);
+    // Count registered users by location
+    usersByLocation.forEach(locationData => {
+      const key = locationData.location;
+      if (areas.has(key)) {
+        areas.get(key).users = locationData.count;
+      } else {
+        // Add location even if no reports yet
+        const [area, city] = key.split(', ');
+        if (area && city) {
+          areas.set(key, {
+            area,
+            city,
+            count: 0,
+            users: locationData.count
+          });
+        }
+      }
+    });
     
     return Array.from(areas.values());
   };
