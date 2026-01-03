@@ -38,11 +38,17 @@ app.get('/api/health', (req, res) => {
 
 // DB connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/health_alerts';
+const PORT = process.env.PORT || 4000;
 
 if (mongoose.connection.readyState === 0) {
 	mongoose.connect(MONGODB_URI)
 		.then(() => console.log('Connected to MongoDB'))
 		.catch((err) => console.error('MongoDB connection error:', err.message));
+}
+
+// Start server for Render
+if (require.main === module) {
+	app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
 // Export for Vercel

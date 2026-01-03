@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Use local backend for development
-const API_BASE_URL = 'http://localhost:4000/api';
+// Use environment variable or fallback to production backend
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://health-alert-backend.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
