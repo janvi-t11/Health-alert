@@ -180,40 +180,36 @@ export default function AdminDashboard() {
   const getUniqueAreas = () => {
     const areas = new Map();
     
-    // Count reports by area
+    // First, add all locations with registered users
+    usersByLocation.forEach(locationData => {
+      const key = locationData.location;
+      const [area, city] = key.split(', ');
+      if (area && city) {
+        areas.set(key, {
+          area,
+          city,
+          count: 0,
+          users: locationData.count
+        });
+      }
+    });
+    
+    // Then, count reports by area
     allReports
       .filter(r => r.status === 'approved')
       .forEach(r => {
         const key = `${r.area}, ${r.city}`;
-        if (!areas.has(key)) {
+        if (areas.has(key)) {
+          areas.get(key).count++;
+        } else {
           areas.set(key, {
             area: r.area,
             city: r.city,
-            count: 0,
+            count: 1,
             users: 0
           });
         }
-        areas.get(key).count++;
       });
-    
-    // Count registered users by location
-    usersByLocation.forEach(locationData => {
-      const key = locationData.location;
-      if (areas.has(key)) {
-        areas.get(key).users = locationData.count;
-      } else {
-        // Add location even if no reports yet
-        const [area, city] = key.split(', ');
-        if (area && city) {
-          areas.set(key, {
-            area,
-            city,
-            count: 0,
-            users: locationData.count
-          });
-        }
-      }
-    });
     
     return Array.from(areas.values());
   };
