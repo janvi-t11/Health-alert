@@ -5,6 +5,7 @@ const severityAnalyzer = require('../utils/severityAnalyzer');
 const emergencyProtocols = require('../utils/emergencyProtocols');
 const upload = require('../middleware/upload');
 const { auth } = require('../middleware/auth');
+const { detectFakeReport } = require('../services/openaiService');
 
 // GET all reports
 router.get('/', async (req, res) => {
@@ -32,6 +33,16 @@ router.post('/', upload.array('images', 5), async (req, res) => {
     // Automatic severity analysis (stored separately)
     const severityAnalysis = severityAnalyzer.analyzeSeverity(req.body);
     
+    // OpenAI Fake Report Detection (runs in background)
+    let fakeDetection = null;
+    try {
+      const detectionResult = await detectFakeReport(req.body);
+      fakeDetection = detectionResult.analysis;
+      console.log('Fake Detection Result:', fakeDetection);
+    } catch (error) {
+      console.error('Fake detection failed, continuing without it:', error.message);
+    }
+    
     // Process uploaded images
     const images = req.files ? req.files.map(file => ({
       url: `/uploads/${file.filename}`,
@@ -44,6 +55,7 @@ router.post('/', upload.array('images', 5), async (req, res) => {
       // Use user's severity if provided, otherwise use auto-analyzed severity
       severity: req.body.severity || severityAnalysis.severity,
       autoSeverity: severityAnalysis,
+      fakeDetection: fakeDetection, // Add AI fake detection results
       images: images,
       reportedBy: null
     };

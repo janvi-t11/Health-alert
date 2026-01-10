@@ -60,6 +60,17 @@ const reportSchema = new mongoose.Schema({
     communityRisk: String,
     aiConfidence: Number
   },
+  fakeDetection: {
+    isFake: Boolean,
+    confidence: Number,
+    riskLevel: String,
+    flags: [String],
+    qualityScore: Number,
+    recommendation: String,
+    reasoning: String,
+    analyzedAt: Date,
+    model: String
+  },
   images: [{
     url: String,
     caption: String,

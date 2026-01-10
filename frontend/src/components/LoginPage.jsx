@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon, HeartIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { authAPI } from '../services/api';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -25,15 +26,9 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:4000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+      const data = await authAPI.login(formData);
       
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
+      if (data.success) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('userEmail', data.user.email);
@@ -44,7 +39,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Login failed. Please try again.');
+      toast.error(error.response?.data?.error || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

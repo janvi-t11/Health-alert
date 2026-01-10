@@ -605,6 +605,34 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 )}
+                {selectedReport.fakeDetection && (
+                  <div className={`p-3 rounded-lg ${
+                    selectedReport.fakeDetection.isFake ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'
+                  }`}>
+                    <label className={`text-sm font-medium ${
+                      selectedReport.fakeDetection.isFake ? 'text-red-900' : 'text-green-900'
+                    }`}>🤖 AI Fake Detection:</label>
+                    <div className={`text-sm space-y-1 ${
+                      selectedReport.fakeDetection.isFake ? 'text-red-800' : 'text-green-800'
+                    }`}>
+                      <p>Status: <span className="font-medium">{selectedReport.fakeDetection.isFake ? '⚠️ Suspicious' : '✅ Legitimate'}</span></p>
+                      <p>Confidence: <span className="font-medium">{selectedReport.fakeDetection.confidence}%</span></p>
+                      <p>Quality Score: <span className="font-medium">{selectedReport.fakeDetection.qualityScore}/100</span></p>
+                      <p>Recommendation: <span className="font-medium uppercase">{selectedReport.fakeDetection.recommendation}</span></p>
+                      {selectedReport.fakeDetection.flags && selectedReport.fakeDetection.flags.length > 0 && (
+                        <div>
+                          <p className="font-medium">Flags:</p>
+                          <ul className="list-disc list-inside text-xs">
+                            {selectedReport.fakeDetection.flags.map((flag, idx) => (
+                              <li key={idx}>{flag}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <p className="text-xs italic mt-2">{selectedReport.fakeDetection.reasoning}</p>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex justify-end space-x-3 mt-6">
                 <button
