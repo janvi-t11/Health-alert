@@ -1,15 +1,35 @@
 const OpenAI = require('openai');
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
 /**
  * Analyze report for fake/spam detection using OpenAI
  * Returns validation score and flags
  */
 async function detectFakeReport(reportData) {
   try {
+    // Check if API key is available
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('OpenAI API key not configured, skipping AI analysis');
+      return {
+        success: false,
+        error: 'API key not configured',
+        analysis: {
+          isFake: false,
+          confidence: 0,
+          riskLevel: 'unknown',
+          flags: ['AI analysis unavailable'],
+          qualityScore: 50,
+          recommendation: 'review',
+          reasoning: 'OpenAI API key not configured',
+          analyzedAt: new Date(),
+          model: 'fallback'
+        }
+      };
+    }
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+
     const { diseaseType, description, healthIssue, severity, area, city } = reportData;
     
     const prompt = `You are a health report validation system. Analyze this health report for authenticity and quality.
