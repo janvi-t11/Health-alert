@@ -12,7 +12,7 @@ const reportSchema = new mongoose.Schema({
   severity: {
     type: String,
     enum: ['low', 'moderate', 'high', 'critical'],
-    default: 'low'
+    required: true  // Make it required, no default
   },
   autoSeverity: {
     severity: String,

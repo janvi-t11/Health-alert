@@ -487,7 +487,7 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         report.severity === 'critical' ? 'bg-red-100 text-red-800' :
-                        report.severity === 'severe' ? 'bg-orange-100 text-orange-800' :
+                        report.severity === 'high' ? 'bg-orange-100 text-orange-800' :
                         report.severity === 'moderate' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-green-100 text-green-800'
                       }`}>

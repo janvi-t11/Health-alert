@@ -30,11 +30,8 @@ const UserSchema = new mongoose.Schema({
   profile: {
     avatar: String,
     bio: String,
-    location: {
-      city: String,
-      state: String,
-      pincode: String
-    },
+    location: String, // Changed to String for easy grouping
+    phone: String,
     preferences: {
       notifications: { type: Boolean, default: true },
       emailAlerts: { type: Boolean, default: true }

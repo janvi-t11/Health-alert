@@ -55,7 +55,7 @@ router.post('/admin/register', async (req, res) => {
 // Register route
 router.post('/register', async (req, res) => {
   try {
-    const { firstName, lastName, email, password, phone } = req.body;
+    const { firstName, lastName, email, password, phone, location } = req.body;
     
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -63,13 +63,16 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'User already exists' });
     }
     
-    // Create new user
+    // Create new user with location stored as string for easy grouping
     const newUser = new User({
       name: `${firstName} ${lastName}`,
       email,
       password,
       phone,
-      profile: { phone }
+      profile: { 
+        phone,
+        location: location || 'Unknown' // Store as string
+      }
     });
     
     await newUser.save();

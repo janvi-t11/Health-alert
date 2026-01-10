@@ -30,7 +30,7 @@ const MapView = () => {
       }
       locationMap[key].areas.add(report.area);
       locationMap[key].totalCases++;
-      if (report.severity === 'severe') {
+      if (report.severity === 'high' || report.severity === 'critical') {
         locationMap[key].severeCases++;
       }
     });

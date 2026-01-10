@@ -29,7 +29,7 @@ router.get('/verified', async (req, res) => {
 // POST create new report with image upload
 router.post('/', upload.array('images', 5), async (req, res) => {
   try {
-    // Automatic severity analysis
+    // Automatic severity analysis (stored separately)
     const severityAnalysis = severityAnalyzer.analyzeSeverity(req.body);
     
     // Process uploaded images
@@ -41,7 +41,8 @@ router.post('/', upload.array('images', 5), async (req, res) => {
     
     const reportData = {
       ...req.body,
-      severity: severityAnalysis.severity,
+      // Use user's severity if provided, otherwise use auto-analyzed severity
+      severity: req.body.severity || severityAnalysis.severity,
       autoSeverity: severityAnalysis,
       images: images,
       reportedBy: null
