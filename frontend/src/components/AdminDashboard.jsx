@@ -136,6 +136,28 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleResolve = async (reportId) => {
+    const resolutionNote = prompt('Enter resolution note (optional):');
+    try {
+      const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+      const response = await fetch(`${API_URL}/reports/${reportId}/resolve`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          resolutionNote: resolutionNote || 'Outbreak contained, no new cases reported',
+          adminId: localStorage.getItem('userEmail')
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Report resolved successfully!');
+        window.location.reload();
+      }
+    } catch (error) {
+      toast.error('Failed to resolve report');
+    }
+  };
+
   const handleAreaAlert = async (area, city) => {
     // Find users in this location
     const locationKey = `${area}, ${city}`;
@@ -463,6 +485,17 @@ export default function AdminDashboard() {
                         <div className="text-sm text-gray-500">
                           Issue Type: {report.diseaseType}
                         </div>
+                        {report.lifecycle?.reportStatus && (
+                          <span className={`inline-flex mt-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+                            report.lifecycle.reportStatus === 'active' ? 'bg-blue-100 text-blue-800' :
+                            report.lifecycle.reportStatus === 'monitoring' ? 'bg-yellow-100 text-yellow-800' :
+                            report.lifecycle.reportStatus === 'resolved' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {report.lifecycle.reportStatus.toUpperCase()}
+                            {report.lifecycle.daysActive && ` (${report.lifecycle.daysActive}d)`}
+                          </span>
+                        )}
                         {(report.aiAnalysis || report.urgencyScore || report.riskCategory) && (
                           <div className="text-xs text-blue-600 mt-1">
                             AI Risk: {report.aiAnalysis?.riskCategory || report.riskCategory || 'general'} | 
@@ -505,6 +538,7 @@ export default function AdminDashboard() {
                             setShowModal(true);
                           }}
                           className="text-primary-600 hover:text-primary-900"
+                          title="View Details"
                         >
                           <EyeIcon className="h-4 w-4" />
                         </button>
@@ -513,20 +547,32 @@ export default function AdminDashboard() {
                             <button
                               onClick={() => handleApprove(report._id)}
                               className="text-green-600 hover:text-green-900"
+                              title="Approve"
                             >
                               <CheckCircleIcon className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => handleReject(report._id)}
                               className="text-red-600 hover:text-red-900"
+                              title="Reject"
                             >
                               <XCircleIcon className="h-4 w-4" />
                             </button>
                           </>
                         )}
+                        {activeTab === 'accepted' && report.lifecycle?.reportStatus !== 'resolved' && (
+                          <button
+                            onClick={() => handleResolve(report._id)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="Resolve Report"
+                          >
+                            <CheckCircleIcon className="h-4 w-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDelete(report._id)}
                           className="text-gray-600 hover:text-gray-900"
+                          title="Delete"
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -630,6 +676,28 @@ export default function AdminDashboard() {
                         </div>
                       )}
                       <p className="text-xs italic mt-2">{selectedReport.fakeDetection.reasoning}</p>
+                    </div>
+                  </div>
+                )}
+                {selectedReport.lifecycle && (
+                  <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                    <label className="text-sm font-medium text-purple-900">📊 Report Lifecycle:</label>
+                    <div className="text-sm text-purple-800 space-y-1">
+                      <p>Status: <span className="font-medium uppercase">{selectedReport.lifecycle.reportStatus || 'active'}</span></p>
+                      {selectedReport.lifecycle.daysActive && (
+                        <p>Days Active: <span className="font-medium">{selectedReport.lifecycle.daysActive} days</span></p>
+                      )}
+                      {selectedReport.lifecycle.userRecovered && (
+                        <p>✅ User marked as recovered on {new Date(selectedReport.lifecycle.userRecoveredAt).toLocaleDateString()}</p>
+                      )}
+                      {selectedReport.lifecycle.resolvedAt && (
+                        <div>
+                          <p>✅ Resolved on {new Date(selectedReport.lifecycle.resolvedAt).toLocaleDateString()}</p>
+                          {selectedReport.lifecycle.resolutionNote && (
+                            <p className="text-xs italic mt-1">Note: {selectedReport.lifecycle.resolutionNote}</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

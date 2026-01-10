@@ -45,12 +45,35 @@ const reportSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'approved', 'rejected'],
-    default: 'active'
+    enum: ['pending', 'active', 'monitoring', 'resolved', 'archived', 'approved', 'rejected'],
+    default: 'pending'
   },
   verified: {
     type: Boolean,
     default: false
+  },
+  lifecycle: {
+    reportStatus: {
+      type: String,
+      enum: ['active', 'monitoring', 'resolved', 'archived'],
+      default: 'active'
+    },
+    userRecovered: {
+      type: Boolean,
+      default: false
+    },
+    userRecoveredAt: Date,
+    resolvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Admin'
+    },
+    resolvedAt: Date,
+    resolutionNote: String,
+    autoResolved: {
+      type: Boolean,
+      default: false
+    },
+    daysActive: Number
   },
   aiAnalysis: {
     severity: String,

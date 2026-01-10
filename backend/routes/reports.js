@@ -135,4 +135,72 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// PUT mark user as recovered
+router.put('/:id/recovered', async (req, res) => {
+  try {
+    const report = await Report.findByIdAndUpdate(
+      req.params.id,
+      { 
+        'lifecycle.userRecovered': true,
+        'lifecycle.userRecoveredAt': new Date()
+      },
+      { new: true }
+    );
+    if (!report) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    res.json({ success: true, message: 'Marked as recovered', report });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// PUT resolve report (Admin only)
+router.put('/:id/resolve', async (req, res) => {
+  try {
+    const { resolutionNote, adminId } = req.body;
+    const report = await Report.findByIdAndUpdate(
+      req.params.id,
+      { 
+        'lifecycle.reportStatus': 'resolved',
+        'lifecycle.resolvedBy': adminId,
+        'lifecycle.resolvedAt': new Date(),
+        'lifecycle.resolutionNote': resolutionNote || 'Outbreak contained, no new cases reported'
+      },
+      { new: true }
+    );
+    if (!report) {
+      return res.status(404).json({ error: 'Report not found' });
+    }
+    res.json({ success: true, message: 'Report resolved', report });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// GET active reports only (exclude resolved/archived)
+router.get('/active', async (req, res) => {
+  try {
+    const reports = await Report.find({ 
+      verified: true,
+      'lifecycle.reportStatus': { $in: ['active', 'monitoring'] }
+    }).sort({ createdAt: -1 });
+    res.json(reports);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET resolved reports
+router.get('/resolved', async (req, res) => {
+  try {
+    const reports = await Report.find({ 
+      'lifecycle.reportStatus': 'resolved'
+    }).sort({ 'lifecycle.resolvedAt': -1 });
+    res.json(reports);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

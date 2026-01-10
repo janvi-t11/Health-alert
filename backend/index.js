@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const { updateReportLifecycles } = require('./utils/lifecycleManager');
 
 dotenv.config();
 
@@ -42,7 +43,13 @@ const PORT = process.env.PORT || 4000;
 
 if (mongoose.connection.readyState === 0) {
 	mongoose.connect(MONGODB_URI)
-		.then(() => console.log('Connected to MongoDB'))
+		.then(() => {
+			console.log('Connected to MongoDB');
+			// Run lifecycle update every 6 hours
+			setInterval(updateReportLifecycles, 6 * 60 * 60 * 1000);
+			// Run once on startup
+			updateReportLifecycles();
+		})
 		.catch((err) => console.error('MongoDB connection error:', err.message));
 }
 
