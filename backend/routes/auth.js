@@ -149,19 +149,25 @@ router.post('/login', async (req, res) => {
     }
     
     // Check registered admins in database
-    const admin = await Admin.findOne({ email, isActive: true });
-    if (admin && await admin.comparePassword(password)) {
-      console.log('Database admin login successful');
-      const token = jwt.sign(
-        { id: admin._id, email: admin.email, role: 'admin' },
-        process.env.JWT_SECRET || 'fallback-secret',
-        { expiresIn: '24h' }
-      );
-      return res.json({
-        success: true,
-        user: { email: admin.email, role: 'admin', name: admin.name },
-        token
-      });
+    const admin = await Admin.findOne({ email });
+    console.log('Admin found in DB:', admin ? 'Yes' : 'No');
+    if (admin) {
+      console.log('Admin isActive:', admin.isActive);
+      const passwordMatch = await admin.comparePassword(password);
+      console.log('Password match:', passwordMatch);
+      if (passwordMatch) {
+        console.log('Database admin login successful');
+        const token = jwt.sign(
+          { id: admin._id, email: admin.email, role: 'admin' },
+          process.env.JWT_SECRET || 'fallback-secret',
+          { expiresIn: '24h' }
+        );
+        return res.json({
+          success: true,
+          user: { email: admin.email, role: 'admin', name: admin.name },
+          token
+        });
+      }
     }
     
     console.log('Login failed: Invalid credentials');
