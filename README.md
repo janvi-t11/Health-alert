@@ -103,6 +103,8 @@ Open your browser and navigate to  http://localhost:5173
 
   Password: admin123
 
+  CREDENTIAL: ADMIN2024 (register as admin)
+
 
 ### Supported Locations
 The platform includes pincode-based auto-fill for major Indian cities including:
