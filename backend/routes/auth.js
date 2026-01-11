@@ -100,8 +100,11 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    // Check demo user
+    console.log('Login attempt:', email);
+    
+    // Check demo user FIRST
     if (email === DEMO_USER.email && password === DEMO_USER.password) {
+      console.log('Demo user login successful');
       const token = jwt.sign(
         { email: DEMO_USER.email, role: 'user' },
         process.env.JWT_SECRET || 'fallback-secret',
@@ -109,13 +112,14 @@ router.post('/login', async (req, res) => {
       );
       return res.json({
         success: true,
-        user: { email: DEMO_USER.email, role: 'user' },
+        user: { email: DEMO_USER.email, role: 'user', name: 'Demo User' },
         token
       });
     }
     
-    // Check demo admin
+    // Check demo admin FIRST
     if (email === DEMO_ADMIN.email && password === DEMO_ADMIN.password) {
+      console.log('Demo admin login successful');
       const token = jwt.sign(
         { email: DEMO_ADMIN.email, role: 'admin' },
         process.env.JWT_SECRET || 'fallback-secret',
@@ -131,6 +135,7 @@ router.post('/login', async (req, res) => {
     // Check registered users in database
     const user = await User.findOne({ email });
     if (user && await user.comparePassword(password)) {
+      console.log('Database user login successful');
       const token = jwt.sign(
         { id: user._id, email: user.email, role: 'user' },
         process.env.JWT_SECRET || 'fallback-secret',
@@ -146,6 +151,7 @@ router.post('/login', async (req, res) => {
     // Check registered admins in database
     const admin = await Admin.findOne({ email, isActive: true });
     if (admin && await admin.comparePassword(password)) {
+      console.log('Database admin login successful');
       const token = jwt.sign(
         { id: admin._id, email: admin.email, role: 'admin' },
         process.env.JWT_SECRET || 'fallback-secret',
@@ -158,6 +164,7 @@ router.post('/login', async (req, res) => {
       });
     }
     
+    console.log('Login failed: Invalid credentials');
     res.status(401).json({ error: 'Invalid credentials' });
   } catch (error) {
     console.error('Login error:', error);
