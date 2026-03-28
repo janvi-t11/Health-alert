@@ -20,7 +20,12 @@ const UserSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: true
+    required: false
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true
   },
   role: {
     type: String,
@@ -30,7 +35,7 @@ const UserSchema = new mongoose.Schema({
   profile: {
     avatar: String,
     bio: String,
-    location: String, // Changed to String for easy grouping
+    location: String,
     phone: String,
     preferences: {
       notifications: { type: Boolean, default: true },

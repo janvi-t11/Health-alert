@@ -3,6 +3,9 @@ const router = express.Router();
 const User = require('../models/User');
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Demo credentials
 const DEMO_USER = { email: 'demo@healthalerts.com', password: 'demo123' };
@@ -230,6 +233,47 @@ router.get('/users-by-location', async (req, res) => {
   } catch (error) {
     console.error('Users by location error:', error);
     res.status(500).json({ error: 'Failed to fetch users by location' });
+  }
+});
+
+router.post('/google', async (req, res) => {
+  try {
+    const { credential } = req.body;
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub: googleId } = payload;
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = new User({
+        name,
+        email,
+        password: Math.random().toString(36).slice(-8),
+        phone: '',
+        googleId,
+        profile: { avatar: picture, location: 'Unknown' }
+      });
+      await user.save();
+    } else if (!user.googleId) {
+      user.googleId = googleId;
+      if (picture && !user.profile.avatar) user.profile.avatar = picture;
+      await user.save();
+    }
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || 'fallback-secret',
+      { expiresIn: '24h' }
+    );
+    res.json({
+      success: true,
+      user: { email: user.email, role: user.role, name: user.name, avatar: user.profile?.avatar },
+      token
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(500).json({ error: 'Google authentication failed' });
   }
 });
 
