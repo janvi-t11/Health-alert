@@ -11,7 +11,7 @@ const app = express();
 
 // Middlewares
 app.use(cors({
-	origin: ['http://localhost:5173', 'http://localhost:5174', 'https://healthalertplatform.netlify.app', 'https://health-alert.vercel.app'],
+	origin: ['http://localhost:5173', 'http://localhost:5174', 'https://healthalertplatform.netlify.app', 'https://health-alert-backend.onrender.com'],
 	credentials: true
 }));
 app.use(express.json());

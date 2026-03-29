@@ -4,7 +4,7 @@
   publish = "dist"
 
 [build.environment]
-  VITE_API_BASE_URL = "https://health-alert.vercel.app/api"
+  VITE_API_BASE_URL = "https://health-alert-backend.onrender.com/api"
   VITE_GOOGLE_CLIENT_ID = "23024030080-o94mo0rak6rjbmaf2km48ico2m3f1ieq.apps.googleusercontent.com"
 
 [[redirects]]
