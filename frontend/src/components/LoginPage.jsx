@@ -72,20 +72,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center px-4 py-8 sm:py-12">
       <div className="max-w-md w-full">
         {/* Logo */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-8"
+          className="text-center mb-6 sm:mb-8"
         >
-          <div className="flex justify-center mb-4">
-            <HeartIcon className="h-12 w-12 text-primary-600" />
+          <div className="flex justify-center mb-3 sm:mb-4">
+            <HeartIcon className="h-10 w-10 sm:h-12 sm:w-12 text-primary-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-600 mt-2">Sign in to your HealthAlerts account</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Welcome Back</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-2">Sign in to your HealthAlerts account</p>
         </motion.div>
 
         {/* Login Form */}
@@ -95,7 +95,7 @@ export default function LoginPage() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="card"
         >
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
@@ -106,7 +106,7 @@ export default function LoginPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="input-field"
+                className="input-field text-base"
                 placeholder="Enter your email"
                 required
               />
@@ -123,14 +123,14 @@ export default function LoginPage() {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="input-field pr-10"
+                  className="input-field pr-10 text-base"
                   placeholder="Enter your password"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center touch-manipulation"
                 >
                   {showPassword ? (
                     <EyeSlashIcon className="h-5 w-5 text-gray-400" />
@@ -141,7 +141,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
               <div className="flex items-center">
                 <input
                   id="remember-me"
@@ -161,7 +161,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full btn-primary py-3 text-base font-medium"
+              className="w-full btn-primary py-3 text-base font-medium touch-manipulation min-h-[44px]"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
@@ -174,7 +174,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-4 sm:mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
@@ -184,7 +184,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-center">
+            <div className="mt-4 sm:mt-6 flex justify-center">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={() => toast.error('Google login failed')}
@@ -201,15 +201,15 @@ export default function LoginPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-center mt-6 space-y-2"
+          className="text-center mt-4 sm:mt-6 space-y-2"
         >
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Don't have an account?{' '}
             <Link to="/register" className="text-primary-600 hover:text-primary-500 font-medium">
               Sign up for free
             </Link>
           </p>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Admin?{' '}
             <Link to="/admin/login" className="text-primary-600 hover:text-primary-500 font-medium">
               Admin Portal
@@ -222,7 +222,7 @@ export default function LoginPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200"
+          className="mt-6 sm:mt-8 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200"
         >
           <h3 className="text-sm font-medium text-blue-900 mb-2">Demo Credentials</h3>
           <p className="text-xs text-blue-700">

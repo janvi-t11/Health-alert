@@ -152,20 +152,20 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center px-4 py-8 sm:py-12">
       <div className="max-w-md w-full">
         {/* Logo */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-8"
+          className="text-center mb-6 sm:mb-8"
         >
-          <div className="flex justify-center mb-4">
-            <HeartIcon className="h-12 w-12 text-primary-600" />
+          <div className="flex justify-center mb-3 sm:mb-4">
+            <HeartIcon className="h-10 w-10 sm:h-12 sm:w-12 text-primary-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-600 mt-2">Join HealthAlerts to protect your community</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Create Account</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-2">Join HealthAlerts to protect your community</p>
         </motion.div>
 
         {/* Progress Steps */}
@@ -173,25 +173,25 @@ export default function RegisterPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
           <div className="flex items-center justify-between">
             <div className={`flex items-center ${step >= 1 ? 'text-primary-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 ${
                 step >= 1 ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-300'
               }`}>
-                {step > 1 ? <CheckIcon className="h-5 w-5" /> : '1'}
+                {step > 1 ? <CheckIcon className="h-4 w-4 sm:h-5 sm:w-5" /> : '1'}
               </div>
-              <span className="ml-2 text-sm font-medium">Personal Info</span>
+              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">Personal</span>
             </div>
-            <div className={`flex-1 h-0.5 mx-4 ${step >= 2 ? 'bg-primary-600' : 'bg-gray-300'}`}></div>
+            <div className={`flex-1 h-0.5 mx-2 sm:mx-4 ${step >= 2 ? 'bg-primary-600' : 'bg-gray-300'}`}></div>
             <div className={`flex items-center ${step >= 2 ? 'text-primary-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border-2 ${
                 step >= 2 ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-300'
               }`}>
                 2
               </div>
-              <span className="ml-2 text-sm font-medium">Security</span>
+              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium">Security</span>
             </div>
           </div>
         </motion.div>
@@ -203,10 +203,10 @@ export default function RegisterPage() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="card"
         >
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {step === 1 ? (
               <>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
                       First Name *
@@ -217,7 +217,7 @@ export default function RegisterPage() {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleChange}
-                      className="input-field"
+                      className="input-field text-base"
                       placeholder="John"
                       required
                     />
@@ -232,7 +232,7 @@ export default function RegisterPage() {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleChange}
-                      className="input-field"
+                      className="input-field text-base"
                       placeholder="Doe"
                       required
                     />
@@ -249,7 +249,7 @@ export default function RegisterPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="input-field"
+                    className="input-field text-base"
                     placeholder="john@example.com"
                     required
                   />
@@ -265,7 +265,7 @@ export default function RegisterPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="input-field"
+                    className="input-field text-base"
                     placeholder="+91 9876543210"
                     required
                   />
@@ -282,7 +282,7 @@ export default function RegisterPage() {
                     name="location"
                     value={formData.location}
                     onChange={handleChange}
-                    className="input-field"
+                    className="input-field text-base"
                     placeholder="City, State"
                   />
                 </div>
@@ -290,7 +290,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="w-full btn-primary py-3 text-base font-medium"
+                  className="w-full btn-primary py-3 text-base font-medium touch-manipulation min-h-[44px]"
                 >
                   Continue
                 </button>
@@ -308,7 +308,7 @@ export default function RegisterPage() {
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      className="input-field pr-10"
+                      className="input-field pr-10 text-base"
                       placeholder="Create a strong password"
                       autoComplete="new-password"
                       required
@@ -316,7 +316,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center touch-manipulation"
                     >
                       {showPassword ? (
                         <EyeSlashIcon className="h-5 w-5 text-gray-400" />
@@ -357,7 +357,7 @@ export default function RegisterPage() {
                       name="confirmPassword"
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      className="input-field pr-10"
+                      className="input-field pr-10 text-base"
                       placeholder="Confirm your password"
                       autoComplete="new-password"
                       required
@@ -365,7 +365,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center touch-manipulation"
                     >
                       {showConfirmPassword ? (
                         <EyeSlashIcon className="h-5 w-5 text-gray-400" />
@@ -376,18 +376,18 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div className="flex space-x-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="flex-1 btn-secondary py-3 text-base font-medium"
+                    className="w-full sm:flex-1 btn-secondary py-3 text-base font-medium touch-manipulation min-h-[44px]"
                   >
                     Back
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex-1 btn-primary py-3 text-base font-medium"
+                    className="w-full sm:flex-1 btn-primary py-3 text-base font-medium touch-manipulation min-h-[44px]"
                   >
                     {isLoading ? (
                       <div className="flex items-center justify-center">
@@ -403,7 +403,7 @@ export default function RegisterPage() {
             )}
           </form>
 
-          <div className="mt-6">
+          <div className="mt-4 sm:mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
@@ -413,7 +413,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-center">
+            <div className="mt-4 sm:mt-6 flex justify-center">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={() => toast.error('Google signup failed')}
@@ -429,9 +429,9 @@ export default function RegisterPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-center mt-6"
+          className="text-center mt-4 sm:mt-6"
         >
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Already have an account?{' '}
             <Link to="/login" className="text-primary-600 hover:text-primary-500 font-medium">
               Sign in here
