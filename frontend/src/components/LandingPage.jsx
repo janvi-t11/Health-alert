@@ -10,6 +10,7 @@ import {
   HeartIcon
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
+import LocationAlert from './LocationAlert';
 
 export default function LandingPage() {
   const features = [
@@ -39,6 +40,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+      <LocationAlert sessionKey="landing" />
       {/* Navigation */}
       <nav className="relative z-10 px-6 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">

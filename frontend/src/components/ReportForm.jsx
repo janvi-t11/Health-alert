@@ -12,9 +12,11 @@ import { createReport } from '../services/api';
 import toast from 'react-hot-toast';
 import { useData } from '../context/DataContext';
 import { aiService } from '../services/aiService';
+import { useGeolocation } from '../hooks/useGeolocation';
 
 export default function ReportForm({ onSubmitted }) {
   const { addReport } = useData();
+  const { getLocation, loading: geoLoading } = useGeolocation();
   const [diseaseType, setDiseaseType] = useState('Fever');
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState(null);
@@ -27,6 +29,28 @@ export default function ReportForm({ onSubmitted }) {
   const [pincode, setPincode] = useState('');
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const handleUseMyLocation = async () => {
+    try {
+      toast.loading('Detecting your location...', { id: 'geo' });
+      const loc = await getLocation();
+      if (loc.city)    setCity(loc.city);
+      if (loc.state)   setState(loc.state);
+      if (loc.country) setCountry(loc.country);
+      if (loc.area)    setArea(loc.area);
+      if (loc.pincode) setPincode(loc.pincode);
+
+      const detected = [
+        loc.area,
+        loc.city,
+        loc.pincode ? `Pincode: ${loc.pincode}` : 'Enter pincode manually'
+      ].filter(Boolean).join(', ');
+
+      toast.success(`Detected: ${detected}`, { id: 'geo', duration: 4000 });
+    } catch (err) {
+      toast.error('Could not get location. Please allow location access.', { id: 'geo' });
+    }
+  };
 
   const fetchLocationFromPincode = async (pin) => {
     if (pin.length === 6) {
@@ -342,10 +366,19 @@ export default function ReportForm({ onSubmitted }) {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Location *
               </label>
+              <button
+                type="button"
+                onClick={handleUseMyLocation}
+                disabled={geoLoading}
+                className="mb-3 inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <MapPinIcon className="h-4 w-4 mr-2" />
+                {geoLoading ? 'Detecting...' : 'Use My Location'}
+              </button>
               <div className="space-y-3">
                 <div>
                   <label htmlFor="pincode" className="block text-xs font-medium text-gray-700 mb-1">
-                    Pincode *
+                    Pincode <span className="text-gray-400">(optional)</span>
                   </label>
                   <input
                     type="text"
@@ -353,10 +386,9 @@ export default function ReportForm({ onSubmitted }) {
                     value={pincode}
                     onChange={handlePincodeChange}
                     className="input-field"
-                    placeholder="Enter 6-digit pincode (e.g., 400058)"
+                    placeholder="6-digit pincode (auto-detected or enter manually)"
                     maxLength={6}
                     autoComplete="postal-code"
-                    required
                   />
                   {pincodeLoading && (
                     <p className="text-xs text-blue-600 mt-1">Fetching location details...</p>
@@ -426,7 +458,7 @@ export default function ReportForm({ onSubmitted }) {
 
             {/* Submit Button */}
             <button
-              disabled={submitting || !severity || !country || !state || !city || !area || !pincode}
+              disabled={submitting || !severity || !country || !state || !city || !area}
               type="submit"
               className="w-full btn-primary py-3 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >

@@ -5,6 +5,7 @@ import { EyeIcon, EyeSlashIcon, HeartIcon } from '@heroicons/react/24/outline';
 import { GoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
 import { authAPI } from '../services/api';
+import LocationAlert from './LocationAlert';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -73,6 +74,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center px-4 py-8 sm:py-12">
+      <LocationAlert sessionKey="login" />
       <div className="max-w-md w-full">
         {/* Logo */}
         <motion.div
@@ -108,6 +110,7 @@ export default function LoginPage() {
                 onChange={handleChange}
                 className="input-field text-base"
                 placeholder="Enter your email"
+                autoComplete="username"
                 required
               />
             </div>
@@ -125,6 +128,7 @@ export default function LoginPage() {
                   onChange={handleChange}
                   className="input-field pr-10 text-base"
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                   required
                 />
                 <button
@@ -174,6 +178,7 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'your_google_client_id_here' && (
           <div className="mt-4 sm:mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -183,7 +188,6 @@ export default function LoginPage() {
                 <span className="px-2 bg-white text-gray-500">Or continue with</span>
               </div>
             </div>
-
             <div className="mt-4 sm:mt-6 flex justify-center">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
@@ -194,6 +198,7 @@ export default function LoginPage() {
               />
             </div>
           </div>
+          )}
         </motion.div>
 
         {/* Sign Up Link */}

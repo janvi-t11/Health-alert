@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { 
   DocumentTextIcon, 
   EyeIcon,
@@ -11,17 +11,29 @@ import {
 import { useData } from '../context/DataContext';
 
 export default function ReportsPage() {
-  const { reports, loading } = useData();
+  const { reports, allReports, loading } = useData();
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('city') || '');
+  const [showAll, setShowAll] = useState(!!searchParams.get('city')); // show all when coming from map
 
-  const [searchTerm, setSearchTerm] = useState('');
+  // Use allReports when coming from map (city param present), else verified only
+  const sourceReports = showAll ? (allReports?.length ? allReports : reports) : reports;
 
-  const filteredReports = reports.filter(report => {
+  // Update search if URL param changes
+  useEffect(() => {
+    const city = searchParams.get('city');
+    if (city) {
+      setSearchTerm(city);
+      setShowAll(true);
+    }
+  }, [searchParams]);
+
+  const filteredReports = sourceReports.filter(report => {
     const matchesSearch = searchTerm === '' || 
       report.diseaseType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.healthIssue?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.state?.toLowerCase().includes(searchTerm.toLowerCase());
-
     return matchesSearch;
   });
 
@@ -69,19 +81,39 @@ export default function ReportsPage() {
 
         {/* Search */}
         <div className="card mb-6">
-          <div>
-            <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
-              Search Reports
-            </label>
-            <input
-              type="text"
-              id="search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field"
-              placeholder="Search by disease type, health issue, or location..."
-            />
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div className="flex-1">
+              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+                Search Reports
+              </label>
+              <input
+                type="text"
+                id="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input-field"
+                placeholder="Search by disease type, health issue, or location..."
+              />
+            </div>
+            <div className="flex items-center gap-2 pb-1">
+              <span className="text-sm text-gray-600">Show unverified</span>
+              <button
+                onClick={() => setShowAll(v => !v)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  showAll ? 'bg-blue-600' : 'bg-gray-300'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  showAll ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
           </div>
+          {showAll && (
+            <p className="mt-2 text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded-md">
+              ℹ️ Showing all reports including pending/unverified — these may not be confirmed yet.
+            </p>
+          )}
         </div>
 
         {/* Reports List */}

@@ -15,12 +15,14 @@ import MapView from './components/MapView'
 import ReportForm from './components/ReportForm'
 import TrendsChart from './components/TrendsChart'
 import SpriteMCPTest from './components/SpriteMCPTest'
+import DangerBanner from './components/DangerBanner'
 
 function App() {
   return (
     <DataProvider>
       <BrowserRouter>
         <div className="App">
+        <DangerBanner />
         <Toaster 
           position="top-right"
           toastOptions={{

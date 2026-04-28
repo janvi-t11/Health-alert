@@ -1,199 +1,329 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  MapPinIcon, 
-  ShieldCheckIcon, 
-  ExclamationTriangleIcon,
-  XMarkIcon 
+import { Link } from 'react-router-dom';
+import {
+  MapPinIcon, ShieldCheckIcon, ExclamationTriangleIcon, XMarkIcon, ArrowRightIcon
 } from '@heroicons/react/24/outline';
 import { useData } from '../context/DataContext';
 
-export default function LocationAlert() {
-  const { reports } = useData();
-  const [showAlert, setShowAlert] = useState(false);
+// Reverse geocode using backend proxy with bigdatacloud fallback
+async function reverseGeocode(lat, lng) {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+  // Try backend first
+  try {
+    const res = await fetch(`${API_BASE}/geocode/reverse?lat=${lat}&lng=${lng}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.city) return { city: data.city, area: data.area || '', district: data.state || '' };
+    }
+  } catch {}
+  // Fallback to bigdatacloud
+  try {
+    const res = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+    );
+    const data = await res.json();
+    return {
+      city:     data.city || data.principalSubdivision || '',
+      area:     data.locality || '',
+      district: data.principalSubdivision || '',
+    };
+  } catch {}
+  return { city: '', area: '', district: '' };
+}
+
+// Match report to user location — exact city match only
+function isNearUser(report, userLoc) {
+  const reportCity = report.city?.toLowerCase().trim();
+  const userCity   = userLoc.city?.toLowerCase().trim();
+  const userDistrict = userLoc.district?.toLowerCase().trim();
+
+  if (!reportCity || !userCity) return false;
+
+  // Exact city match
+  if (reportCity === userCity) return true;
+
+  // Handle known aliases: Aurangabad ↔ Chhatrapati Sambhajinagar
+  const aliases = [
+    ['aurangabad', 'chhatrapati sambhajinagar', 'chhatrapati sambhaji nagar', 'sambhajinagar'],
+  ];
+  for (const group of aliases) {
+    if (group.includes(reportCity) && (group.includes(userCity) || group.includes(userDistrict))) return true;
+  }
+
+  return false;
+}
+
+const STORAGE_KEY = 'locationPermissionAsked';
+
+export default function LocationAlert({ sessionKey = 'default' }) {
+  const { allReports, reports, setDangerZone } = useData();
+  const sourceReports = allReports?.length ? allReports : reports;
+
+  // 'ask'      → show our custom "Allow Location" prompt
+  // 'loading'  → getting GPS + geocoding
+  // 'done'     → show alert popup
+  // 'denied'   → user said no
+  // 'idle'     → already asked this session, skip
+  const [step, setStep] = useState('idle');
   const [userLocation, setUserLocation] = useState(null);
   const [alertData, setAlertData] = useState(null);
-  const [locationRequested, setLocationRequested] = useState(false);
+  const initRef = useRef(false);
 
+  // On mount — check if we already asked this session
   useEffect(() => {
-    if (!locationRequested) {
-      requestLocation();
-      setLocationRequested(true);
+    if (initRef.current) return;
+    initRef.current = true;
+
+    const alreadyAsked = sessionStorage.getItem(`${STORAGE_KEY}_${sessionKey}`);
+    if (!alreadyAsked) {
+      // Small delay so page renders first, then show our prompt
+      setTimeout(() => setStep('ask'), 800);
     }
-  }, [locationRequested]);
+  }, [sessionKey]);
 
-  useEffect(() => {
-    if (userLocation && reports.length > 0) {
-      checkNearbyReports();
+  // When user clicks "Allow" on our custom prompt
+  const handleAllow = () => {
+    sessionStorage.setItem(`${STORAGE_KEY}_${sessionKey}`, 'true');
+    setStep('loading');
+
+    if (!navigator.geolocation) {
+      setStep('denied');
+      return;
     }
-  }, [userLocation, reports]);
 
-  const requestLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        (error) => {
-          // Fallback: ask for city manually or use IP-based location
-          setUserLocation({ city: 'Unknown', manual: true });
-        }
-      );
-    }
-  };
-
-  const checkNearbyReports = () => {
-    if (!userLocation) return;
-
-    // For demo, we'll use city-based matching since we don't have GPS coordinates in reports
-    // In real implementation, you'd calculate distance using GPS coordinates
-    
-    const nearbyReports = reports.filter(report => {
-      // Simple city matching - in real app, use GPS distance calculation
-      return report.verified && report.city && 
-             userLocation.city && 
-             report.city.toLowerCase().includes(userLocation.city.toLowerCase());
-    });
-
-    const criticalReports = nearbyReports.filter(r => 
-      r.severity === 'critical' || r.severity === 'severe'
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        const loc = await reverseGeocode(lat, lng);
+        setUserLocation({ ...loc, lat, lng });
+        // step will move to 'done' via the next useEffect
+      },
+      (err) => {
+        console.warn('Location denied:', err.message);
+        setStep('denied');
+      },
+      { timeout: 10000, maximumAge: 0, enableHighAccuracy: true }
     );
+  };
 
-    if (criticalReports.length > 0) {
-      setAlertData({
-        type: 'danger',
-        title: 'Health Alert in Your Area',
-        message: `${criticalReports.length} critical health issue(s) reported in your area. Stay cautious and follow safety guidelines.`,
-        reports: criticalReports.slice(0, 3),
-        totalNearby: nearbyReports.length
-      });
-    } else if (nearbyReports.length > 0) {
-      setAlertData({
-        type: 'warning',
-        title: 'Health Reports in Your Area',
-        message: `${nearbyReports.length} health issue(s) reported in your area. Stay informed and take precautions.`,
-        reports: nearbyReports.slice(0, 3),
-        totalNearby: nearbyReports.length
-      });
+  const handleDeny = () => {
+    sessionStorage.setItem(`${STORAGE_KEY}_${sessionKey}`, 'true');
+    setStep('idle');
+  };
+
+  // Once we have location + reports, compute alert
+  useEffect(() => {
+    if (!userLocation || !sourceReports.length) return;
+
+    const nearby = sourceReports.filter(r => isNearUser(r, userLocation));
+    const critical = nearby.filter(r => r.severity === 'critical');
+    const high     = nearby.filter(r => r.severity === 'high');
+    const displayCity = userLocation.area || userLocation.city || userLocation.district || 'your area';
+
+    if (critical.length > 0) {
+      setAlertData({ type: 'danger', title: '🚨 Danger Zone Detected!',
+        message: `${critical.length} critical health report(s) in ${displayCity}. Take immediate precautions.`,
+        reports: critical.slice(0, 3), extra: Math.max(0, nearby.length - 3), city: userLocation.city });
+      setDangerZone({ city: displayCity, count: critical.length, type: 'critical' });
+
+    } else if (high.length > 0) {
+      setAlertData({ type: 'warning', title: '⚠️ Health Alert in Your Area',
+        message: `${high.length} high severity report(s) near ${displayCity}. Stay cautious.`,
+        reports: high.slice(0, 3), extra: Math.max(0, nearby.length - 3), city: userLocation.city });
+      setDangerZone({ city: displayCity, count: high.length, type: 'high' });
+
+    } else if (nearby.length > 0) {
+      setAlertData({ type: 'info', title: '📋 Health Reports Near You',
+        message: `${nearby.length} health report(s) in ${displayCity}. Stay informed.`,
+        reports: nearby.slice(0, 3), extra: Math.max(0, nearby.length - 3), city: userLocation.city });
+
     } else {
-      setAlertData({
-        type: 'safe',
-        title: 'Safe Zone',
-        message: 'No health issues reported in your immediate area. You are in a relatively safe zone.',
-        reports: [],
-        totalNearby: 0
-      });
+      setAlertData({ type: 'safe', title: '✅ Your Area is Safe',
+        message: `No active health reports near ${displayCity}. Stay safe!`,
+        reports: [], extra: 0, city: userLocation.city });
     }
-    
-    setShowAlert(true);
+
+    setStep('done');
+  }, [userLocation, sourceReports.length]);
+
+  const styles = {
+    danger:  { bg: 'bg-red-50',    border: 'border-red-300',    title: 'text-red-900',    msg: 'text-red-700',    tag: 'bg-red-100 text-red-800',     btn: 'bg-red-600 hover:bg-red-700 text-white',      icon: <ExclamationTriangleIcon className="h-7 w-7 text-red-600" /> },
+    warning: { bg: 'bg-orange-50', border: 'border-orange-300', title: 'text-orange-900', msg: 'text-orange-700', tag: 'bg-orange-100 text-orange-800', btn: 'bg-orange-500 hover:bg-orange-600 text-white', icon: <ExclamationTriangleIcon className="h-7 w-7 text-orange-500" /> },
+    info:    { bg: 'bg-blue-50',   border: 'border-blue-200',   title: 'text-blue-900',   msg: 'text-blue-700',   tag: 'bg-blue-100 text-blue-800',    btn: 'bg-blue-600 hover:bg-blue-700 text-white',    icon: <MapPinIcon className="h-7 w-7 text-blue-500" /> },
+    safe:    { bg: 'bg-green-50',  border: 'border-green-200',  title: 'text-green-900',  msg: 'text-green-700',  tag: 'bg-green-100 text-green-800',  btn: 'bg-green-600 hover:bg-green-700 text-white',  icon: <ShieldCheckIcon className="h-7 w-7 text-green-600" /> },
   };
 
-  const closeAlert = () => {
-    setShowAlert(false);
-  };
-
-  if (!showAlert || !alertData) return null;
+  const severityColor = (sev) => ({
+    low: 'bg-green-100 text-green-700', moderate: 'bg-yellow-100 text-yellow-700',
+    high: 'bg-orange-100 text-orange-700', critical: 'bg-red-100 text-red-700 font-bold',
+  }[sev] || 'bg-gray-100 text-gray-600');
 
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      >
+
+      {/* Step 1 — Custom permission prompt */}
+      {step === 'ask' && (
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          className={`max-w-md w-full rounded-lg shadow-xl p-6 ${
-            alertData.type === 'danger' ? 'bg-red-50 border-2 border-red-200' :
-            alertData.type === 'warning' ? 'bg-yellow-50 border-2 border-yellow-200' :
-            'bg-green-50 border-2 border-green-200'
-          }`}
+          key="ask"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
         >
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center">
-              {alertData.type === 'safe' ? (
-                <ShieldCheckIcon className="h-8 w-8 text-green-600 mr-3" />
-              ) : (
-                <ExclamationTriangleIcon className={`h-8 w-8 mr-3 ${
-                  alertData.type === 'danger' ? 'text-red-600' : 'text-yellow-600'
-                }`} />
-              )}
-              <div>
-                <h3 className={`text-lg font-semibold ${
-                  alertData.type === 'danger' ? 'text-red-900' :
-                  alertData.type === 'warning' ? 'text-yellow-900' :
-                  'text-green-900'
-                }`}>
-                  {alertData.title}
-                </h3>
+          <motion.div
+            initial={{ scale: 0.88, opacity: 0, y: 16 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.88, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+            className="max-w-sm w-full bg-white rounded-2xl shadow-2xl overflow-hidden"
+          >
+            {/* Top accent */}
+            <div className="bg-blue-600 px-6 py-4 text-white text-center">
+              <MapPinIcon className="h-10 w-10 mx-auto mb-2 opacity-90" />
+              <h3 className="text-lg font-bold">Allow Location Access</h3>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-600 text-sm text-center mb-2">
+                HealthAlerts needs your location to check for
+                <span className="font-semibold text-red-600"> health alerts near you</span>.
+              </p>
+              <p className="text-gray-400 text-xs text-center mb-6">
+                Your location is never stored or shared.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleAllow}
+                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  <MapPinIcon className="h-4 w-4" />
+                  Allow Location
+                </button>
+                <button
+                  onClick={handleDeny}
+                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm font-medium transition-colors"
+                >
+                  Not Now
+                </button>
               </div>
             </div>
-            <button
-              onClick={closeAlert}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <XMarkIcon className="h-6 w-6" />
-            </button>
-          </div>
-
-          <p className={`text-sm mb-4 ${
-            alertData.type === 'danger' ? 'text-red-800' :
-            alertData.type === 'warning' ? 'text-yellow-800' :
-            'text-green-800'
-          }`}>
-            {alertData.message}
-          </p>
-
-          {alertData.reports.length > 0 && (
-            <div className="space-y-2 mb-4">
-              <h4 className={`text-sm font-medium ${
-                alertData.type === 'danger' ? 'text-red-900' :
-                alertData.type === 'warning' ? 'text-yellow-900' :
-                'text-green-900'
-              }`}>
-                Recent Reports:
-              </h4>
-              {alertData.reports.map((report, index) => (
-                <div key={index} className={`p-2 rounded text-xs ${
-                  alertData.type === 'danger' ? 'bg-red-100' :
-                  alertData.type === 'warning' ? 'bg-yellow-100' :
-                  'bg-green-100'
-                }`}>
-                  <div className="font-medium">{report.diseaseType}</div>
-                  <div className="text-gray-600">{report.area}, {report.city}</div>
-                </div>
-              ))}
-              {alertData.totalNearby > 3 && (
-                <p className="text-xs text-gray-600">
-                  +{alertData.totalNearby - 3} more reports in your area
-                </p>
-              )}
-            </div>
-          )}
-
-          <div className="flex items-center text-xs text-gray-600 mb-4">
-            <MapPinIcon className="h-4 w-4 mr-1" />
-            Location-based alert • Updated now
-          </div>
-
-          <button
-            onClick={closeAlert}
-            className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
-              alertData.type === 'danger' ? 'bg-red-600 hover:bg-red-700 text-white' :
-              alertData.type === 'warning' ? 'bg-yellow-600 hover:bg-yellow-700 text-white' :
-              'bg-green-600 hover:bg-green-700 text-white'
-            }`}
-          >
-            Got it
-          </button>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      )}
+
+      {/* Step 2 — Loading */}
+      {step === 'loading' && (
+        <motion.div
+          key="loading"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+        >
+          <div className="bg-white rounded-2xl px-8 py-6 shadow-xl flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent" />
+            <p className="text-sm text-gray-600 font-medium">Detecting your location...</p>
+            <p className="text-xs text-gray-400">Checking nearby health alerts</p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Step 3 — Alert result */}
+      {step === 'done' && alertData && (
+        <motion.div
+          key="done"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => e.target === e.currentTarget && setStep('idle')}
+        >
+          <motion.div
+            initial={{ scale: 0.88, opacity: 0, y: 16 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.88, opacity: 0, y: 16 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+            className={`max-w-md w-full rounded-2xl shadow-2xl border-2 ${styles[alertData.type].bg} ${styles[alertData.type].border} overflow-hidden`}
+          >
+            {alertData.type === 'danger' && (
+              <div className="bg-red-600 text-white text-center text-xs font-bold py-1.5 tracking-widest uppercase animate-pulse">
+                🚨 You are in a danger zone
+              </div>
+            )}
+
+            <div className="p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  {styles[alertData.type].icon}
+                  <div>
+                    <h3 className={`text-base font-bold ${styles[alertData.type].title}`}>{alertData.title}</h3>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <MapPinIcon className="h-3 w-3 text-gray-400" />
+                      <span className="text-xs text-gray-400">
+                        {userLocation?.area && `${userLocation.area}, `}{userLocation?.city}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <button onClick={() => setStep('idle')} className="text-gray-400 hover:text-gray-600">
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
+
+              <p className={`text-sm mb-4 ${styles[alertData.type].msg}`}>{alertData.message}</p>
+
+              {alertData.reports.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  <p className={`text-xs font-semibold uppercase tracking-wide ${styles[alertData.type].title}`}>Reports in your area:</p>
+                  {alertData.reports.map((r, i) => (
+                    <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg ${styles[alertData.type].tag}`}>
+                      <div>
+                        <p className="text-sm font-medium">{r.diseaseType || r.healthIssue}</p>
+                        <p className="text-xs opacity-70">{r.area}, {r.city}</p>
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${severityColor(r.severity)}`}>
+                        {r.severity}
+                      </span>
+                    </div>
+                  ))}
+                  {alertData.extra > 0 && (
+                    <p className="text-xs text-gray-400 text-center">+{alertData.extra} more reports nearby</p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-4">
+                <MapPinIcon className="h-3 w-3" />
+                Based on your GPS location · Live data
+              </div>
+
+              <div className="flex gap-3">
+                {alertData.type !== 'safe' ? (
+                  <>
+                    <Link
+                      to={`/reports?city=${encodeURIComponent(alertData.city)}`}
+                      onClick={() => setStep('idle')}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${styles[alertData.type].btn}`}
+                    >
+                      View Reports <ArrowRightIcon className="h-4 w-4" />
+                    </Link>
+                    <button
+                      onClick={() => setStep('idle')}
+                      className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                    >
+                      Dismiss
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setStep('idle')}
+                    className={`w-full py-2.5 rounded-lg text-sm font-semibold ${styles[alertData.type].btn}`}
+                  >
+                    Got it, Stay Safe!
+                  </button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
     </AnimatePresence>
   );
 }

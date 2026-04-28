@@ -14,6 +14,7 @@ export const DataProvider = ({ children }) => {
   const [allReports, setAllReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [dangerZone, setDangerZone] = useState(null); // { city, count, type: 'critical'|'high' }
   
   // Filter reports based on user type
   const reports = isAdmin ? allReports : allReports.filter(r => r.verified === true);
@@ -79,6 +80,8 @@ export const DataProvider = ({ children }) => {
     addReport,
     loadReports,
     getAnalytics,
+    dangerZone,
+    setDangerZone,
     approveReport: async (reportId) => {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'}/reports/${reportId}/approve`, {

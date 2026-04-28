@@ -28,6 +28,29 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/users', usersRouter);
 
+// Reverse geocode proxy — calls Nominatim server-side to avoid CORS
+app.get('/api/geocode/reverse', async (req, res) => {
+	const { lat, lng } = req.query;
+	if (!lat || !lng) return res.status(400).json({ error: 'lat and lng required' });
+	try {
+		const response = await fetch(
+			`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+			{ headers: { 'User-Agent': 'HealthAlertApp/1.0 (contact@healthalerts.com)', 'Accept-Language': 'en' } }
+		);
+		const data = await response.json();
+		const addr = data.address || {};
+		res.json({
+			area:    addr.suburb || addr.neighbourhood || addr.quarter || addr.hamlet || addr.road || '',
+			city:    addr.city || addr.town || addr.village || addr.county || '',
+			state:   addr.state || '',
+			pincode: addr.postcode || '',
+			country: addr.country || 'India',
+		});
+	} catch (err) {
+		res.status(500).json({ error: 'Geocoding failed' });
+	}
+});
+
 // Root routes
 app.get('/', (req, res) => {
 	res.json({ message: 'Health Alerts API is running', status: 'ok' });
