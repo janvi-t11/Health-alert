@@ -29,8 +29,10 @@ export default function LoginPage() {
         localStorage.setItem('token', data.token);
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('userEmail', data.user.email);
-        toast.success('Login successful!');
+                toast.success('Login successful!');
+        localStorage.removeItem('locationPermissionAsked_login');
         navigate('/dashboard');
+
       } else {
         toast.error(data.error || 'Google login failed');
       }
@@ -59,8 +61,10 @@ export default function LoginPage() {
         localStorage.setItem('token', data.token);
         localStorage.setItem('userRole', data.user.role);
         localStorage.setItem('userEmail', data.user.email);
-        toast.success('Login successful!');
+                toast.success('Login successful!');
+        localStorage.removeItem('locationPermissionAsked_login');
         navigate('/dashboard');
+
       } else {
         toast.error(data.error || 'Invalid email or password');
       }
@@ -74,7 +78,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center px-4 py-8 sm:py-12">
-      <LocationAlert sessionKey="login" />
+      <LocationAlert sessionKey="login" useLocalStorage />
+
       <div className="max-w-md w-full">
         {/* Logo */}
         <motion.div

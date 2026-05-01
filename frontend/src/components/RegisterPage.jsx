@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { EyeIcon, EyeSlashIcon, HeartIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, EyeSlashIcon, HeartIcon, CheckIcon, MapPinIcon } from '@heroicons/react/24/outline';
+
 import { GoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
+import { useGeolocation } from '../hooks/useGeolocation';
+
 import { authAPI } from '../services/api';
 
 export default function RegisterPage() {
@@ -21,6 +24,24 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
+    const { getLocation, loading: geoLoading } = useGeolocation();
+
+  const handleDetectLocation = async () => {
+    try {
+      toast.loading('Detecting location...', { id: 'geo' });
+      const loc = await getLocation();
+      if (loc.city) {
+        setFormData(prev => ({
+          ...prev,
+          location: `${loc.area ? loc.area + ', ' : ''}${loc.city}, ${loc.state}`
+        }));
+        toast.success(`Location detected: ${loc.city}`, { id: 'geo' });
+      }
+    } catch {
+      toast.error('Could not detect location', { id: 'geo' });
+    }
+  };
+
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
@@ -272,20 +293,32 @@ export default function RegisterPage() {
                   <p className="text-xs text-gray-500 mt-1">For health alerts and notifications</p>
                 </div>
 
-                <div>
+                                <div>
                   <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
                     Location
                   </label>
-                  <input
-                    type="text"
-                    id="location"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    className="input-field text-base"
-                    placeholder="City, State"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      id="location"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleChange}
+                      className="input-field text-base flex-1"
+                      placeholder="City, State (or auto-detect)"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleDetectLocation}
+                      disabled={geoLoading}
+                      className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 whitespace-nowrap flex items-center gap-1"
+                    >
+                      <MapPinIcon className="h-4 w-4" />
+                      {geoLoading ? '...' : 'Detect'}
+                    </button>
+                  </div>
                 </div>
+
 
                 <button
                   type="button"

@@ -14,7 +14,8 @@ export default function ReportsPage() {
   const { reports, allReports, loading } = useData();
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('city') || '');
-  const [showAll, setShowAll] = useState(!!searchParams.get('city')); // show all when coming from map
+  const [showAll, setShowAll] = useState(true);
+ // show all when coming from map
 
   // Use allReports when coming from map (city param present), else verified only
   const sourceReports = showAll ? (allReports?.length ? allReports : reports) : reports;

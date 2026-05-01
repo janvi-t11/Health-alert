@@ -15,7 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { api } from '../api';
 import toast from 'react-hot-toast';
-import LocationAlert from './LocationAlert';
+
 import { useData } from '../context/DataContext';
 
 export default function Dashboard() {
@@ -104,7 +104,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <LocationAlert sessionKey="dashboard" />
+    
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

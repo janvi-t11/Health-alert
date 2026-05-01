@@ -38,12 +38,17 @@ async function updateReportLifecycles() {
     );
 
     // Calculate days active for all reports
-    const allReports = await Report.find({ 'lifecycle.reportStatus': { $ne: 'archived' } });
-    for (const report of allReports) {
-      const daysActive = Math.floor((now - report.createdAt) / (1000 * 60 * 60 * 24));
-      report.lifecycle.daysActive = daysActive;
-      await report.save();
-    }
+   const allReports = await Report.find(
+  { 'lifecycle.reportStatus': { $ne: 'archived' } },
+  { _id: 1, createdAt: 1 }
+);
+for (const report of allReports) {
+  const daysActive = Math.floor((now - report.createdAt) / (1000 * 60 * 60 * 24));
+  await Report.updateOne(
+    { _id: report._id },
+    { $set: { 'lifecycle.daysActive': daysActive } }
+  );
+}
 
     console.log('Report lifecycles updated successfully');
   } catch (error) {

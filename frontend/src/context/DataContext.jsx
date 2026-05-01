@@ -17,7 +17,8 @@ export const DataProvider = ({ children }) => {
   const [dangerZone, setDangerZone] = useState(null); // { city, count, type: 'critical'|'high' }
   
   // Filter reports based on user type
-  const reports = isAdmin ? allReports : allReports.filter(r => r.verified === true);
+  const reports = isAdmin ? allReports : allReports.filter(r => r.status !== 'rejected');
+
 
   useEffect(() => {
     loadReports();

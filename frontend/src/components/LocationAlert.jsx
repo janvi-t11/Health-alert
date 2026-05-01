@@ -56,7 +56,8 @@ function isNearUser(report, userLoc) {
 
 const STORAGE_KEY = 'locationPermissionAsked';
 
-export default function LocationAlert({ sessionKey = 'default' }) {
+export default function LocationAlert({ sessionKey = 'default', useLocalStorage = false }) {
+
   const { allReports, reports, setDangerZone } = useData();
   const sourceReports = allReports?.length ? allReports : reports;
 
@@ -71,20 +72,22 @@ export default function LocationAlert({ sessionKey = 'default' }) {
   const initRef = useRef(false);
 
   // On mount — check if we already asked this session
+  const storage = useLocalStorage ? localStorage : sessionStorage;
+  const storageKey = `${STORAGE_KEY}_${sessionKey}`;
+
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
 
-    const alreadyAsked = sessionStorage.getItem(`${STORAGE_KEY}_${sessionKey}`);
+    const alreadyAsked = storage.getItem(storageKey);
     if (!alreadyAsked) {
-      // Small delay so page renders first, then show our prompt
       setTimeout(() => setStep('ask'), 800);
     }
   }, [sessionKey]);
 
-  // When user clicks "Allow" on our custom prompt
   const handleAllow = () => {
-    sessionStorage.setItem(`${STORAGE_KEY}_${sessionKey}`, 'true');
+    storage.setItem(storageKey, 'true');
+
     setStep('loading');
 
     if (!navigator.geolocation) {
@@ -107,8 +110,9 @@ export default function LocationAlert({ sessionKey = 'default' }) {
     );
   };
 
-  const handleDeny = () => {
-    sessionStorage.setItem(`${STORAGE_KEY}_${sessionKey}`, 'true');
+    const handleDeny = () => {
+    storage.setItem(storageKey, 'true');
+
     setStep('idle');
   };
 
