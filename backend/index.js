@@ -28,28 +28,58 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/users', usersRouter);
 
-// Reverse geocode proxy — calls Nominatim server-side to avoid CORS
+// Reverse geocode proxy — Nominatim with India Post pincode fallback
 app.get('/api/geocode/reverse', async (req, res) => {
-	const { lat, lng } = req.query;
-	if (!lat || !lng) return res.status(400).json({ error: 'lat and lng required' });
-	try {
-		const response = await fetch(
-			`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
-			{ headers: { 'User-Agent': 'HealthAlertApp/1.0 (contact@healthalerts.com)', 'Accept-Language': 'en' } }
-		);
-		const data = await response.json();
-		const addr = data.address || {};
-		res.json({
-			area:    addr.suburb || addr.neighbourhood || addr.quarter || addr.hamlet || addr.road || '',
-			city:    addr.city || addr.town || addr.village || addr.county || '',
-			state:   addr.state || '',
-			pincode: addr.postcode || '',
-			country: addr.country || 'India',
-		});
-	} catch (err) {
-		res.status(500).json({ error: 'Geocoding failed' });
-	}
+  const { lat, lng } = req.query;
+  if (!lat || !lng) return res.status(400).json({ error: 'lat and lng required' });
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'HealthAlertApp/1.0 (healthalerts@gmail.com)',
+          'Accept-Language': 'en',
+          'Referer': 'https://health-alert-backend.onrender.com',
+          'Accept': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) throw new Error(`Nominatim returned ${response.status}`);
+
+    const data = await response.json();
+    const addr = data.address || {};
+
+    const area    = addr.suburb || addr.neighbourhood || addr.quarter || addr.hamlet || addr.road || '';
+    const city    = addr.city || addr.town || addr.village || addr.county || '';
+    const state   = addr.state || '';
+    let   pincode = addr.postcode || '';
+    const country = addr.country || 'India';
+
+    // If Nominatim didn't return pincode, try India Post API
+    if (!pincode && (area || city)) {
+      try {
+        const searchTerm = encodeURIComponent(area || city);
+        const postRes = await fetch(`https://api.postalpincode.in/postoffice/${searchTerm}`);
+        const postData = await postRes.json();
+        if (postData?.[0]?.Status === 'Success' && postData[0].PostOffice?.length > 0) {
+          const stateLower = state.toLowerCase().trim();
+          const match = postData[0].PostOffice.find(p =>
+            p.State?.toLowerCase().trim() === stateLower ||
+            p.State?.toLowerCase().includes(stateLower)
+          );
+          if (match) pincode = match.Pincode;
+        }
+      } catch {}
+    }
+
+    res.json({ area, city, state, pincode, country });
+  } catch (err) {
+    console.error('Geocoding error:', err.message);
+    res.status(500).json({ error: 'Geocoding failed', detail: err.message });
+  }
 });
+
 
 // Root routes
 app.get('/', (req, res) => {
